@@ -1,10 +1,9 @@
 # RO2S Basics
 
-## Command line tools and fundamental concepts
+## Command line tools and fundamental concepts (5h10')
  [Beginner: CLI tools](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools.html)
 
-### Configuring environment 
-- 2h: 2026-04-27 to 2026-05-13
+### Configuring environment (2h)
 - Configuration file: `/home/benjamincanton/ROS2_learn/ros2_env_conf.sh`:
 
 ```bash
@@ -33,17 +32,18 @@ printenv | grep -i ROS
 #ROS_DISTRO=jazzy 
 ```
 
-### Using turtlesim, ros2, and rqt 
-- 1h: 2026-04-27 to 2026-04-27
+### Using turtlesim, ros2, and rqt (1h)
 
-### Understanding nodes 
-- 20': 2026-05-13 to 2026-05-13
+### Understanding nodes (20')
 
-Understanding topics 
-- : 2026-05-14 to WiP
+### Understanding topics (20')
 
-Understanding services 
-Understanding parameters 
-Using rqt_console to view logs 
-Launching nodes 
-Recording and playing back data 
+### Understanding services (40')
+
+### Understanding parameters (15')
+
+### Using rqt_console to view logs (10')
+
+### Launching nodes (5')
+
+### Recording and playing back data (20')
