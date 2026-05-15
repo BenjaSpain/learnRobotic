@@ -10,3 +10,6 @@ source /opt/ros/jazzy/setup.bash
 #Define ROS_DOMAIN_ID = 10
 export ROS_DOMAIN_ID=10
 #echo "export ROS_DOMAIN_ID=10" >> ~/.bashrc
+
+#Middleware implementation identifier: rmw_fastrtps_cpp
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp

@@ -4,7 +4,7 @@ Robotic basic learning
 Steps:
 1. Install Ubuntu: (Jazzy or later), host or container
 2. Install ROS2 Jazzy Distribution
-3. '1_ROS2_basics.md'
+3. `1_ROS2_basics.md`
 
 ## Install ROS2 Jazzy Distribution
 [Installation Documentation](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
@@ -29,11 +29,14 @@ sudo apt update && sudo apt install ros-dev-tools
 
 # Install Desktop: ROS, RViz, demos, tutorials 
 sudo apt update && sudo apt install ros-jazzy-desktop 
+
+# Install Middleware
+sudo apt update && sudo apt install ros-jazzy-rmw-fastrtps-cpp
  
 # ROS-Base Install (Bare Bones) -> Skipped (installed Desktop tools) 
 # sudo apt update && sudo apt install ros-jazzy-ros-base 
  
-# Set up your environment by sourcing your environ 
+# Set up your environment by sourcing your environment 
 source /opt/ros/jazzy/setup.bash 
 ```
 
