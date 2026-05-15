@@ -33,6 +33,23 @@ printenv | grep -i ROS
 ```
 
 ### Using turtlesim, ros2, and rqt (1h)
+- Some useful commands
+```bash
+# Init turtlesim
+ros2 run turtlesim turtlesim_node
+# Use turtlesim teleop
+ros2 run turtlesim turtle_teleop_key
+
+# List ros2 elements
+ros2 node list
+ros2 topic list
+ros2 action list
+ros2 service list
+
+# rqt
+rqt
+```
+
 
 ### Understanding nodes (20')
 
