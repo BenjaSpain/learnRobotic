@@ -4,7 +4,8 @@ Robotic basic learning
 Steps:
 1. Install Ubuntu: (Jazzy or later), host or container
 2. Install ROS2 Jazzy Distribution
-3. `1_ROS2_basics.md`
+3. `1_1-ROS2_command_line_tools.md`
+4. `1_2-ROS2_client_libraries.md`
 
 ## Install ROS2 Jazzy Distribution
 [Installation Documentation](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
