@@ -230,7 +230,7 @@ cd ros2_ws
 # RUN listener
 ros2 run cpp_pubsub listener
 ```
-## Writing a simple publisher and subscriber (Python) (WIP)
+## Writing a simple publisher and subscriber (Python) (1h)
 
 ### Create Package py_pubsub
 - In new terminal create Package:
@@ -328,4 +328,147 @@ source ros2_env_conf.sh
 cd ros2_ws/
 source install/setup.bash
 ros2 run py_pubsub listener
+```
+
+## Writing a simple service and client (Python) (1h)
+### Create Package py_pubsub and configure it
+- In new terminal create Package:
+```bash
+# Source ROS2 environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+
+# Create Package: py_srvcli
+#   - --dependencies: Add dependencies to package.xml
+cd ~/learnRobotic/ros2_ws/src
+ros2 pkg create --build-type ament_python --license Apache-2.0 py_srvcli --dependencies rclpy example_interfaces
+```
+
+- Configure:`~/learnRobotic/ros2_ws/src/py_srvcli/resource/py_srvcli`  
+    `int64 a`  
+    `int64 b`  
+    `---`  
+    `int64 sum`
+
+- Modify package metadata `~/learnRobotic/ros2_ws/src/py_srvcli/package.xml`. Only need description, dependencies already added on package creation:
+    `<version>0.0.1</version>`  
+    `<description>Python client server tutorial</description>`
+
+- MOdify package setup `~/learnRobotic/ros2_ws/src/py_srvcli\setup.py`.
+    `version='0.0.1',`  
+    `description='Python client server tutorial',`  
+    `entry_points={`  
+        `'console_scripts': [`  
+            `'service = py_srvcli.service_member_function:main',`  
+            `'client = py_srvcli.client_member_function:main',`  
+        `],`  
+    `},`
+
+### Write service node
+- Write service: `~/learnRobotic/ros2_ws/src/py_srvcli/py_srvcli/service_member_function.py`:
+```python
+from example_interfaces.srv import AddTwoInts
+
+import rclpy
+from rclpy.node import Node
+
+
+class MinimalService(Node):
+
+    def __init__(self):
+        super().__init__('minimal_service')
+        self.srv = self.create_service(AddTwoInts, 'add_two_ints', self.add_two_ints_callback)
+
+    def add_two_ints_callback(self, request, response):
+        response.sum = request.a + request.b
+        self.get_logger().info('Incoming request\na: %d b: %d' % (request.a, request.b))
+
+        return response
+
+
+def main():
+    rclpy.init()
+
+    minimal_service = MinimalService()
+
+    rclpy.spin(minimal_service)
+
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+### Write client node
+- Write client: `~/learnRobotic/ros2_ws/src/py_srvcli/py_srvcli/client_member_function.py`:
+```python
+import sys
+
+from example_interfaces.srv import AddTwoInts
+import rclpy
+from rclpy.node import Node
+
+
+class MinimalClientAsync(Node):
+
+    def __init__(self):
+        super().__init__('minimal_client_async')
+        self.cli = self.create_client(AddTwoInts, 'add_two_ints')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = AddTwoInts.Request()
+
+    def send_request(self, a, b):
+        self.req.a = a
+        self.req.b = b
+        return self.cli.call_async(self.req)
+
+
+def main():
+    rclpy.init()
+
+    minimal_client = MinimalClientAsync()
+    future = minimal_client.send_request(int(sys.argv[1]), int(sys.argv[2]))
+    rclpy.spin_until_future_complete(minimal_client, future)
+    response = future.result()
+    minimal_client.get_logger().info(
+        'Result of add_two_ints: for %d + %d = %d' %
+        (int(sys.argv[1]), int(sys.argv[2]), response.sum))
+
+    minimal_client.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+### RUN client-service
+- Build package
+```bash
+# Check dependencies
+cd ~/learnRobotic/ros2_ws
+rosdep install -i --from-path src --rosdistro jazzy -y
+# Build package
+colcon build --packages-select py_srvcli
+```
+- Run client. New terminal:
+```bash
+# Source environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+cd ros2_ws
+source install/setup.bash
+ros2 run py_srvcli client 6 8
+```
+
+- Run service. New terminal:
+```bash
+# Source environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+cd ros2_ws
+source install/setup.bash
+ros2 run py_srvcli service
 ```
