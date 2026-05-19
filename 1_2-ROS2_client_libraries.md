@@ -231,3 +231,101 @@ cd ros2_ws
 ros2 run cpp_pubsub listener
 ```
 ## Writing a simple publisher and subscriber (Python) (WIP)
+
+### Create Package py_pubsub
+- In new terminal create Package:
+```bash
+# Source ROS2 environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+
+# Create Package: py_pubsub
+cd ~/learnRobotic/ros2_ws/src
+ros2 pkg create --build-type ament_python --license Apache-2.0 py_pubsub
+```
+
+### Write publisher Node
+```bash
+# Source ROS2 environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+
+# Download sources of Publisher
+cd ~/learnRobotic/ros2_ws/src/py_pubsub/py_pubsub
+wget https://raw.githubusercontent.com/ros2/examples/jazzy/rclpy/topics/minimal_publisher/examples_rclpy_minimal_publisher/publisher_member_function.py
+```
+
+### Write subscriber Node
+```bash
+# Download subscriber source
+cd ~/learnRobotic/ros2_ws/src/py_pubsub/py_pubsub
+wget https://raw.githubusercontent.com/ros2/examples/jazzy/rclpy/topics/minimal_subscriber/examples_rclpy_minimal_subscriber/subscriber_member_function.py
+```
+
+### Configure Package
+- Configure metadata:`~/learnRobotic/ros2_ws/src/py_pubsub/package.xml`
+    - Modify description:  
+        `<description>Examples of minimal publisher/subscriber using rclpy</description>`
+    - Add dependencies:  
+        `<exec_depend>rclpy</exec_depend>
+        <exec_depend>std_msgs</exec_depend>`
+- Configure:`~/learnRobotic/ros2_ws/src/py_pubsub/setup.py`  
+    `from setuptools import find_packages, setup
+
+    package_name = 'py_pubsub'
+
+    setup(
+        name=package_name,
+        version='0.0.1',
+        packages=find_packages(exclude=['test']),
+        data_files=[
+            ('share/ament_index/resource_index/packages',
+                ['resource/' + package_name]),
+            ('share/' + package_name, ['package.xml']),
+        ],
+        install_requires=['setuptools'],
+        zip_safe=True,
+        maintainer='benjamincanton',
+        maintainer_email='55950461+BenjaSpain@users.noreply.github.com',
+        description='Examples of minimal publisher/subscriber using rclpy',
+        license='Apache-2.0',
+        extras_require={
+            'test': [
+                'pytest',
+            ],
+        },
+        entry_points={
+            'console_scripts': [
+                'talker = py_pubsub.publisher_member_function:main',
+                'listener = py_pubsub.subscriber_member_function:main',            
+            ],
+        },
+    )`
+
+### Build and Run
+- Build Package:
+```bash
+# Check dependencies
+cd ~/learnRobotic/ros2_ws
+rosdep install -i --from-path src --rosdistro jazzy -y
+# Build package
+colcon build --packages-select py_pubsub
+```
+
+- Run Publisher. New Terminal:
+```bash
+cd ~/learnRobotic
+source ros2_env_conf.sh
+cd ros2_ws/
+source install/setup.bash
+ros2 run py_pubsub talker
+```
+
+- Run Subscriber. New Terminal:
+```bash
+cd ~/learnRobotic
+source ros2_env_conf.sh
+cd ros2_ws/
+source install/setup.bash
+ros2 run py_pubsub listener
+```
