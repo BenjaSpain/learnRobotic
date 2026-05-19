@@ -1,6 +1,6 @@
 # RO2S Basics
 
-## Command line tools and fundamental concepts (5h10')
+## Command line tools and fundamental concepts (5h45')
  [Beginner: CLI tools](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools.html)
 
 ### Configuring environment (2h)
@@ -179,4 +179,237 @@ ros2 bag play subset
 #   Specific: ros2 bag record --service <service_names>
 #   All: ros2 bag record --all-services
 ros2 bag record --service /add_two_ints
+```
+
+## Client libraries (WIP)
+[Beginner: Client libraries](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Colcon-Tutorial.html)
+
+### Using `colcon` to build packages (1h15')
+- `colcon` is an iteration on the ROS build tools: `catkin_make`, `catkin_make_isolated`, `catkin_tools` and `ament_tools`
+
+- Minimal folder structure managed by colcon:
+   - `src`: ROS sources will be located here
+   - `build`: Intermediate files located here. A subfolder for each package
+   - `install`: Each package installed here. A subfolder for each package
+   - `log`: logging information about `colcon` process
+
+```bash
+## USE COLCON WITH PREPARED EXAMPLES
+# install colcon
+sudo apt update && sudo apt install python3-colcon-common-extensions
+
+# Create folder for workspace
+mkdir -p ~/learnRobotic/ros2_ws/src
+cd ros2_ws
+
+# Clone example
+git clone https://github.com/ros2/examples src/examples -b jazzy
+
+# Build packages (build all in parallel)
+colcon build --symlink-install
+# Build packages (one-by-one if your hosts has limited resources)
+# colcon build --symlink-install --executor sequential
+
+# RUN tests
+colcon test
+
+# Source environment to run binaries of examples
+source install/setup.bash
+
+## RUN example use case: publisher-subscriber
+ros2 run examples_rclcpp_minimal_subscriber subscriber_member_function
+ros2 run examples_rclcpp_minimal_publisher publisher_member_function
+```
+
+#### Create your own package
+- `colon` uses `package.xml` specifications
+- Recommended build types are: ament_cmake, ament_python. Also suported cmake
+- To create package based on template can use: `ros2 pkg create`
+
+#### Setup `colcon_cd`
+- `colcon_cd` allows to change current working directory of shell to the directory of a package
+- Here some configurations added to `ros2_env_conf.sh` to source `colcon` and `colcon_cd`:
+```bash
+### COLCON ###
+# Source colcon workspace setup script to overlay on top of the ROS2 installation
+source src/install/setup.bash
+
+# Setup colcon_cd for ROS2 workspace
+source /usr/share/colcon_cd/function/colcon_cd.sh
+# Set COLCON_PREFIX_PATH to the ROS2 workspace install directory
+export _colcon_cd_root=/opt/ros/jazzy/
+### END COLCON ###
+```
+
+### Creating a workspace (1h15')
+- Source `overlays` over `underlays` is recommended for working on small number of packages, it avoid to have all in the same workspace and rebuild a huge workspace on every iteration.
+- In this process it is cloned a repository for `turtlesim` and build as overlay on top of current `ros2` basic `underlay`
+
+```bash
+# From folder: ~/learnRobotic/ros2_ws/src/ , clone tutorial repo
+cd ~/learnRobotic/ros2_ws/src/
+git clone https://github.com/ros/ros_tutorials.git -b jazzy
+
+# Build just `turtlesim` package from cloned repo
+colcon build --packages-up-to=turtlesim
+```
+
+* Source Overlay:
+   - Sourcing `local_setup` overlay will add the packages of the overlay on the top of your `underlay`.
+   - It allows modify and rebuild packages in the overlay separately from the underlay.
+
+- Open a new terminal and source the overlay for turtlesim
+```bash
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+cd ~/learnRobotic/ros2_ws
+source src/install/local_setup.bash
+```
+- Here we can modify sources + build -> Changes will apply to our overlay terminal, not to underlay terminal
+
+### Creating a package (1h)
+- Package: Organizational unit for ROS2 source
+- Package creation in ROS2:
+    - `ament`: System of Compilation
+    - `colcon`: Toold of building
+    - `CMake` or `Python` officials for creating packages
+#### Package minimum requirement content
+**CMAKE**:
+- `CMakeLists.txt`: File. Describes how to build the code
+- `include/<package_name>`: Folder. Containing public headers
+- `package.xml`: File. Containing meta information
+- `src`: Folder. Contains source code
+**Python**:
+- `package.xml`: File. Meta information
+- `resource/<package_name>`: File. Marker for the package
+- `setup.cfg`: File. Required when a package has executables, so ros2 run can find them
+- `setup.py`: File. Instructions for how to install the package
+- `<package_name>`: Folder. Same name as your package, used by ROS 2 tools to find your package, contains __init__.py
+
+#### Packages in a workspace
+- Workspace can contain many packages of same or different types (CMake, Python, etc...)
+- Not allowed nested packages
+- Best practice: 
+    - `src` folder inside workspace 
+    - Packages folders inside ´src´
+
+Examples. In new terminal:
+```bash
+# Init environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+cd ~/learnRobotic/ros2_ws/src
+# Sintaxis to create packages:
+#   CPP:    ros2 pkg create --build-type ament_cmake --license Apache-2.0 <package_name>
+#   PYTON:  ros2 pkg create --build-type ament_python --license Apache-2.0 <package_name>
+# Create CPP package with node/executable 'my_node'
+ros2 pkg create --build-type ament_cmake --license Apache-2.0 --node-name my_node my_package_cpp
+# Create Python package with node/executable 'my_node'
+ros2 pkg create --build-type ament_python --license Apache-2.0 --node-name my_node my_package_py
+# Build both packages
+colcon build --packages-select my_package_py my_package
+```
+
+- RUN Built Packages in a new Terminal:
+```bash
+# Source ROS2 environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+# Source overlay workspace
+cd ~/learnRobotic/ros2_ws/
+source install/local_setup.bash
+# Run nodes
+ros2 run my_package_py my_node
+ros2 run my_package my_node
+```
+
+### Writing a simple publisher and subscriber (C++) (2h + WIP)
+- Example of minimal publisher and subscriber source: [HERE](https://github.com/ros2/examples/tree/jazzy/rclcpp/topics)
+
+**Publisher Node**
+- In new terminal create Package:
+```bash
+# Source ROS2 environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+
+# Create Package: cpp_pubsub
+cd ~/learnRobotic/ros2_ws/src
+ros2 pkg create --build-type ament_cmake --license Apache-2.0 cpp_pubsub
+```
+- Download subscriber source:
+```bash
+# Download talker example source
+cd ~/learnRobotic/ros2_ws/src/cpp_pubsub/src
+wget -O publisher_lambda_function.cpp https://raw.githubusercontent.com/ros2/examples/jazzy/rclcpp/topics/minimal_publisher/lambda.cpp
+# Navegate to new package and configure it
+cd ..
+```
+- Modify `package.xml`
+    - Modify `description` 
+    - Add dependencies: </br>
+        `<depend>rclcpp</depend> 
+        <depend>std_msgs</depend>`
+- Modify `CMakeList.txt`
+    - Find dependencies: </br>
+       `find_package(rclcpp REQUIRED)
+        find_package(std_msgs REQUIRED)`
+    - Add executable and dependencies: </br>
+        `add_executable(talker src/publisher_lambda_function.cpp)
+        ament_target_dependencies(talker rclcpp std_msgs)`
+    - Add install section
+        `install(TARGETS talker DESTINATION lib/${PROJECT_NAME})`
+
+**Subscriber Node**
+- Download subscriber source. New Terminal:
+```bash
+# Source ROS2 environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+# Download listener example source
+cd ~/learnRobotic/ros2_ws/src/cpp_pubsub/src
+wget -O subscriber_lambda_function.cpp https://raw.githubusercontent.com/ros2/examples/jazzy/rclcpp/topics/minimal_subscriber/lambda.cpp
+# Navegate to new package and configure it
+cd ..
+```
+- Modify `CMakeList.txt` to add subscriber:
+    - Add executable and dependencies: </br>
+        `add_executable(listener src/subscriber_lambda_function.cpp)
+        ament_target_dependencies(listener rclcpp std_msgs)`
+    - Add install section
+        `install(TARGETS talker listener DESTINATION lib/${PROJECT_NAME})`
+
+**Run Subscriber and Publisher Node**
+- Build package.New terminal:
+```bash
+# Check dependencies
+cd ~/learnRobotic/ros2_ws/
+source ros2_env_conf.sh
+rosdep install -i --from-path src --rosdistro jazzy -y
+# Build package cpp_pubsub
+colcon build --packages-select cpp_pubsub
+```
+
+- RUN Subscriber. New terminal:
+```bash
+# ROS2 environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+# workspace overlay
+cd ros2_ws
+. install/setup.bash
+# RUN talker
+ros2 run cpp_pubsub talker
+```
+
+- RUN Publisher. New terminal:
+```bash
+# ROS2 environment
+cd ~/learnRobotic/
+source ros2_env_conf.sh
+# workspace overlay
+cd ros2_ws
+. install/setup.bash
+# RUN listener
+ros2 run cpp_pubsub listener
 ```
