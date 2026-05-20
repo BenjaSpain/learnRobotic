@@ -314,10 +314,7 @@ colcon build --packages-select py_pubsub
 
 - Run Publisher. New Terminal:
 ```bash
-cd ~/learnRobotic
-source ros2_env_conf.sh
-cd ros2_ws/
-source install/setup.bash
+cd ~/learnRobotic && source ros2_env_conf.sh && cd ros2_ws/ && source install/setup.bash
 ros2 run py_pubsub talker
 ```
 
@@ -330,8 +327,64 @@ source install/setup.bash
 ros2 run py_pubsub listener
 ```
 
+
+## Writing a simple service and client (CPP) (1h)
+### Create Package cpp_srvcli and configure it
+- In new terminal create Package:
+```bash
+# Source ROS2 environment
+cd ~/learnRobotic && source ros2_env_conf.sh && cd ros2_ws/ && source install/setup.bash
+
+# Create Package: py_srvcli, adding dependencies
+cd ~/learnRobotic/ros2_ws/src
+ros2 pkg create --build-type ament_cmake --license Apache-2.0 cpp_srvcli --dependencies rclcpp example_interfaces
+```
+- Update `package.xml`:  
+    ```
+    <version>0.0.1</version>
+    <description>C++ client server tutorial</description> 
+    ```
+- Add to `CMakeList.txt` info to build and run server/client
+    ```
+    # Indicate executable, dependencies and installation for the server/client
+    add_executable(server src/add_two_ints_server.cpp)
+    add_executable(client src/add_two_ints_client.cpp)
+    ament_target_dependencies(server rclcpp example_interfaces)
+    ament_target_dependencies(client rclcpp example_interfaces)
+    install(TARGETS server client DESTINATION lib/${PROJECT_NAME})
+    ```
+
+### Nodes Sources
+- Source file: `~/learnRobotic/ros2_ws/src/cpp_srvcli/src/add_two_ints_server.cpp`
+- Source file: `~/learnRobotic/ros2_ws/src/cpp_srvcli/src/add_two_ints_client.cpp`
+
+### BUILD and RUN client-service
+- Build package
+```bash
+# Check dependencies
+cd ~/learnRobotic/ros2_ws
+rosdep install -i --from-path src --rosdistro jazzy -y
+# Build package
+colcon build --packages-select cpp_srvcli
+```
+- Run client. New terminal:
+```bash
+# Source environment
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+# Run Client
+ros2 run cpp_srvcli client 6 8
+```
+
+- Run service. New terminal:
+```bash
+# Source environment
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+# Run Server
+ros2 run cpp_srvcli server
+```
+
 ## Writing a simple service and client (Python) (1h)
-### Create Package py_pubsub and configure it
+### Create Package py_srvcli and configure it
 - In new terminal create Package:
 ```bash
 # Source ROS2 environment
@@ -364,87 +417,12 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_srvcli --depen
         `],`  
     `},`
 
-### Write service node
+### Nodes Sources
 - Write service: `~/learnRobotic/ros2_ws/src/py_srvcli/py_srvcli/service_member_function.py`:
-```python
-from example_interfaces.srv import AddTwoInts
-
-import rclpy
-from rclpy.node import Node
-
-
-class MinimalService(Node):
-
-    def __init__(self):
-        super().__init__('minimal_service')
-        self.srv = self.create_service(AddTwoInts, 'add_two_ints', self.add_two_ints_callback)
-
-    def add_two_ints_callback(self, request, response):
-        response.sum = request.a + request.b
-        self.get_logger().info('Incoming request\na: %d b: %d' % (request.a, request.b))
-
-        return response
-
-
-def main():
-    rclpy.init()
-
-    minimal_service = MinimalService()
-
-    rclpy.spin(minimal_service)
-
-    rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
-```
-
-### Write client node
 - Write client: `~/learnRobotic/ros2_ws/src/py_srvcli/py_srvcli/client_member_function.py`:
-```python
-import sys
-
-from example_interfaces.srv import AddTwoInts
-import rclpy
-from rclpy.node import Node
 
 
-class MinimalClientAsync(Node):
-
-    def __init__(self):
-        super().__init__('minimal_client_async')
-        self.cli = self.create_client(AddTwoInts, 'add_two_ints')
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        self.req = AddTwoInts.Request()
-
-    def send_request(self, a, b):
-        self.req.a = a
-        self.req.b = b
-        return self.cli.call_async(self.req)
-
-
-def main():
-    rclpy.init()
-
-    minimal_client = MinimalClientAsync()
-    future = minimal_client.send_request(int(sys.argv[1]), int(sys.argv[2]))
-    rclpy.spin_until_future_complete(minimal_client, future)
-    response = future.result()
-    minimal_client.get_logger().info(
-        'Result of add_two_ints: for %d + %d = %d' %
-        (int(sys.argv[1]), int(sys.argv[2]), response.sum))
-
-    minimal_client.destroy_node()
-    rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
-```
-
-### RUN client-service
+### BUILD and RUN client-service
 - Build package
 ```bash
 # Check dependencies
@@ -456,19 +434,160 @@ colcon build --packages-select py_srvcli
 - Run client. New terminal:
 ```bash
 # Source environment
-cd ~/learnRobotic/
-source ros2_env_conf.sh
-cd ros2_ws
-source install/setup.bash
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
 ros2 run py_srvcli client 6 8
 ```
 
 - Run service. New terminal:
 ```bash
 # Source environment
-cd ~/learnRobotic/
-source ros2_env_conf.sh
-cd ros2_ws
-source install/setup.bash
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
 ros2 run py_srvcli service
 ```
+
+## Creating custom msg and srv files (2h)
+### Create Package and definitions
+```bash
+# Source environment
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+
+# Create package
+cd ~/learnRobotic/ros2_ws/src/
+ros2 pkg create --build-type ament_cmake --license Apache-2.0 tutorial_interfaces
+
+# msg definition
+cd tutorial_interfaces/
+mkdir msg srv
+cd msg
+touch Num.msg
+# Content of Num.msg:
+##  int64 num
+touch Sphere.msg
+# Content of Sphere.msg:
+##  geometry_msgs/Point center
+##  float64 radius
+
+# srv definition
+cd ../srv
+touch AddThreeInts.srv
+# Content of Num.msg:
+##  int64 a 
+## int64 b
+## int64 c
+## ---
+## int64 sum
+```
+- Add to `CMakelist.txt` to convert custom interfaces into language-specific code (C++, Python):  
+    ```find_package(geometry_msgs REQUIRED)
+    find_package(rosidl_default_generators REQUIRED)
+
+    rosidl_generate_interfaces(${PROJECT_NAME}
+    "msg/Num.msg"
+    "msg/Sphere.msg"
+    "srv/AddThreeInts.srv"
+    DEPENDENCIES geometry_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
+    )
+    ```
+- Add to `package.xml` dependencies:
+    ```<depend>geometry_msgs</depend>
+    <buildtool_depend>rosidl_default_generators</buildtool_depend>
+    <exec_depend>rosidl_default_runtime</exec_depend>
+    <member_of_group>rosidl_interface_packages</member_of_group>
+    ```
+    
+### Build package
+```bash
+# Create environment
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+cd ~/learnRobotic/ros2_ws
+colcon build --packages-select tutorial_interfaces
+```
+
+### Confirm creation of interfaces
+- New terminal:
+```bash
+# Create environment
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+ros2 interface show tutorial_interfaces/msg/Num
+ros2 interface show tutorial_interfaces/msg/Sphere
+ros2 interface show tutorial_interfaces/srv/AddThreeInts
+```
+
+### Testing Num.msg with pub/sub - CPP
+- `cpp_pubsub` package adapted to use our custom interface `Num.msg`:
+    - Specific sources using `Num.msg` in spite of `<String>`
+        - `publisher_lambda_function_interf.cpp`
+        - `subscriber_lambda_function_interf.cpp`
+    - Add to `CMakeLists.txt`:
+        ```
+        find_package(tutorial_interfaces REQUIRED)                      # CHANGE
+        add_executable(talker_interfaces src/publisher_lambda_function_interf.cpp)       # CHANGE
+        add_executable(listener_interfaces src/subscriber_lambda_function_interf.cpp)    # CHANGE
+        ament_target_dependencies(talker_interfaces rclcpp tutorial_interfaces)          # CHANGE
+        ament_target_dependencies(listener_interfaces rclcpp tutorial_interfaces)        # CHANGE
+        ```
+    - Add to `package.xml`:  
+        `<depend>tutorial_interfaces</depend>`
+
+### Testing Num.msg with pub/sub - Python
+- `py_pubsub` package adapted to use our custom interface `Num.msg`:
+    - Specific sources using `Num.msg` in spite of `<String>`
+        - Specific sources using `Num.msg` in spite of `<String>`
+        - `publisher_member_function_interf.cpp`
+        - `subscriber_member_function_interf.cpp`
+    - Add to `package.xml`:
+        ``` 
+        <version>0.0.2</version>
+        <description>Examples of minimal publisher/subscriber using rclpy + interface msg.Num</description>
+        <exec_depend>tutorial_interfaces</exec_depend> 
+        ```
+
+    - Add/modify to `setup.py`:  
+        ```  
+        version='0.0.2  ',
+        description='Examples of minimal publisher/subscriber using rclpy and tutorial_interfaces.msg.Num',
+        entry_points={
+            'console_scripts': [
+                publisher_member_function_interf:main',
+                'listener_interf = py_pubsub.subscriber_member_function_interf:main',          
+            ],
+        },
+        ```
+
+### Testing `AddThreeInts.srv` with service/client - CPP
+#### Sources
+- Source file: `~/learnRobotic/ros2_ws/src/cpp_srvcli/src/add_two_ints_server_interface.cpp`
+- Source file: `~/learnRobotic/ros2_ws/src/cpp_srvcli/src/add_two_ints_client_interface.cpp`
+
+#### Update package configuration
+- Add/Update `CMakeLists.txt`:
+    ```
+    find_package(tutorial_interfaces REQUIRED)                                                          # CHANGE
+    # Indicate executable, dependencies and installation for the server/client using interfaces
+    add_executable(server_interface src/add_two_ints_server_interface.cpp)                              # CHANGE
+    add_executable(client_interface src/add_two_ints_client_interface.cpp)                              # CHANGE
+    ament_target_dependencies(server_interface rclcpp tutorial_interfaces)                              # CHANGE
+    ament_target_dependencies(client_interface rclcpp tutorial_interfaces)                              # CHANGE
+
+    install(TARGETS server client server_interface client_interface DESTINATION lib/${PROJECT_NAME})    # CHANGE
+    ```
+- Add `package.xml`:  
+    ```<depend>tutorial_interfaces</depend>```
+
+#### Build and RUN client_interface , server_interface
+```bash
+# Build
+cd ~/learnRobotic/ros2_ws
+colcon build --packages-select cpp_srvcli
+```
+- Run server_interface. New Terminal:
+```bash
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+ros2 run cpp_srvcli server_interface
+```
+- Run client_interface. New Terminal:
+```bash
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+ros2 run cpp_srvcli client_interface
+```
+## Implementing custom interfaces (WIP)
