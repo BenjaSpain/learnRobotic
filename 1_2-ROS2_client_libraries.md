@@ -661,10 +661,9 @@ touch more_interfaces/msg/AddressBook.msg
 ### Build and run
 ```bash
 # Build package
-cd ~/learnRobotic/ && source ros2_env_conf.sh
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
 colcon build --packages-up-to more_interfaces
 # RUN publisher
- && source install/setup.bash
 ros2 run more_interfaces publish_address_book
 ```
 
@@ -682,7 +681,8 @@ ros2 topic echo /address_book
 - Create package `cpp_parameters`:
     ```bash
     # Build package
-    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    cd src
     ros2 pkg create --build-type ament_cmake --license Apache-2.0 cpp_parameters --dependencies rclcpp
     ```
 
@@ -759,3 +759,55 @@ ros2 param set /minimal_param_node my_parameter earth
     ```
     - `launch` is executed which launches `minimal_param_node` with custom parameters. First message is showed with the custom parameters values indicated by `launch`, next logs are printed with parameters values forced in `minimal_param_node`
     
+## Using parameters in a class - Python (30')
+- Set parameters from launch file. Workflow for Python.
+
+### Create package
+- Create package `python_parameters`:
+    ```bash
+    # Build package
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    cd src
+    ros2 pkg create --build-type ament_python --license Apache-2.0 python_parameters --dependencies rclpy
+    ```
+- Update `package.xml`:
+    ```
+    <version>0.0.1</version>
+    
+    <description>Python parameter tutorial</description>
+    ```
+- Add entry point, `setup.py`:
+    ```
+    version='0.0.1',
+    description='Python parameter tutorial',
+
+    entry_points={
+        'console_scripts': [
+            'minimal_param_node = python_parameters.python_parameters_node:main',
+        ],
+    },
+    ```
+
+### Create Sources
+- Create `python_parameters_node.py`: `~/learnRobotic/ros2_ws/src/python_parameters/python_parameters/python_parameters_node.py`
+
+### Build and Run
+- Check dependencies:
+    ```bash
+    # Build package
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    ```
+- Build package:
+    ```bash
+    # Build package
+    colcon build --packages-select python_parameters
+    ```
+
+- Run Node. New terminal:
+    ```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run 'minimal_param_node'
+    ros2 run python_parameters minimal_param_node
+    ```
