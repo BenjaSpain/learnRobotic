@@ -590,4 +590,88 @@ ros2 run cpp_srvcli server_interface
 cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
 ros2 run cpp_srvcli client_interface
 ```
-## Implementing custom interfaces (WIP)
+## Implementing custom interfaces (1h)
+### Create and configure package
+```bash
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+cd src
+ros2 pkg create --build-type ament_cmake --license Apache-2.0 more_interfaces
+# Create 'msg' interface folder
+mkdir more_interfaces/msg
+# Create msg file
+touch more_interfaces/msg/AddressBook.msg
+```
+
+- Add content to `AddressBook.msg`
+    ```
+    uint8 PHONE_TYPE_HOME=0
+    uint8 PHONE_TYPE_WORK=1
+    uint8 PHONE_TYPE_MOBILE=2
+
+    string first_name
+    string last_name
+    string phone_number
+    uint8 phone_type
+    ```
+
+- Add to `package.xml`:
+    ```
+    <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+    <exec_depend>rosidl_default_runtime</exec_depend>
+
+    <member_of_group>rosidl_interface_packages</member_of_group>
+    ```
+
+- Add to `CMakeLists.txt`
+    ```
+    find_package(rclcpp REQUIRED)
+    # uncomment the following section in order to fill in
+    # further dependencies manually.
+    # find_package(<dependency> REQUIRED)
+
+    # List of messages to generate
+    set(msg_files
+    "msg/AddressBook.msg"
+    )
+    # Generate messages
+    rosidl_generate_interfaces(${PROJECT_NAME}
+    ${msg_files}
+    )
+
+    # Export message runtime dependencies
+    ament_export_dependencies(rosidl_default_runtime)
+
+    # Add executable and dependencies
+    add_executable(publish_address_book src/publish_address_book.cpp)
+    ament_target_dependencies(publish_address_book rclcpp)
+    install(TARGETS publish_address_book DESTINATION lib/${PROJECT_NAME})
+
+    # Allow to use messages interfaces generated inside this package
+    rosidl_get_typesupport_target(cpp_typesupport_target
+    ${PROJECT_NAME} rosidl_typesupport_cpp)
+
+    target_link_libraries(publish_address_book "${cpp_typesupport_target}")
+    ```
+
+### Source
+- Publisher: `~/learnRobotic/ros2_ws/src/more_interfaces/src/publish_address_book.cpp`
+
+
+### Build and run
+```bash
+# Build package
+cd ~/learnRobotic/ && source ros2_env_conf.sh
+colcon build --packages-up-to more_interfaces
+# RUN publisher
+ && source install/setup.bash
+ros2 run more_interfaces publish_address_book
+```
+
+- Check that publisher is working. New Terminal:
+```bash
+# Build package
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+# RUN publisher
+ros2 topic echo /address_book
+```
