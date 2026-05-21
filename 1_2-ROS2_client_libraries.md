@@ -675,3 +675,87 @@ cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/se
 # RUN publisher
 ros2 topic echo /address_book
 ```
+
+## Using parameters ina a class - C++ (30')
+- Nodes may need to have parameters that can be set from the launch file
+### Create and configure Package
+- Create package `cpp_parameters`:
+    ```bash
+    # Build package
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    ros2 pkg create --build-type ament_cmake --license Apache-2.0 cpp_parameters --dependencies rclcpp
+    ```
+
+- Modify `package.xml`:
+    ```
+    <version>0.0.1</version>`
+    <description>C++ parameter tutorial</description>
+    ```
+
+- Modify `CMakeList.txt`:
+    ```
+    # Add source linked to executable and dependedncies
+    add_executable(minimal_param_node src/cpp_parameters_node.cpp)
+    ament_target_dependencies(minimal_param_node rclcpp)
+    
+    # Add executable
+    install(TARGETS minimal_param_node DESTINATION lib/${PROJECT_NAME}
+    )
+    ```
+### Source
+- Node with parameters: `~/learnRobotic/ros2_ws/src/cpp_parameters/src/cpp_parameters_node.cpp`
+
+### Build and Run
+- Build package `cpp_parameters`
+```bash
+# Check dependencies
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+rosdep install -i --from-path src --rosdistro jazzy -y
+# Build package 'cpp_parameters'
+colcon build --packages-select cpp_parameters
+```
+
+- RUN execution. New Terminal:
+```bash
+# Init environment
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+# Run 'minimal_param_node'
+ros2 run cpp_parameters minimal_param_node
+```
+
+### Use `ros2 param` command on running Node
+- Meanwhile running Node `minimal_param_node`, check parameter. New terminal:
+```bash
+# Init environment
+cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+# List parameters of running nodes
+ros2 param list
+# Check parameter 'my_parameter' Type, Description and Contraints
+ros2 param describe /minimal_param_node my_parameter
+# Change param 'my_parameter' value to 'earth'
+ros2 param set /minimal_param_node my_parameter earth
+```
+
+### Change Parameter via launch file
+- Create source of launcher with custom parameter value `~/learnRobotic/os2_ws/src/cpp_parameters/launch/cpp_parameters_launch.py`
+
+- Add launch installation to `CMakeLists.txt`
+    ```
+    install(
+    DIRECTORY launch
+    DESTINATION share/${PROJECT_NAME}
+    )
+    ```
+- Build project. New terminal
+    ```bash
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    colcon build --packages-select cpp_parameters
+    ```
+- Run launcher. New Terminal:
+    ```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    ros2 launch cpp_parameters cpp_parameters_launch.py
+    ```
+    - `launch` is executed which launches `minimal_param_node` with custom parameters. First message is showed with the custom parameters values indicated by `launch`, next logs are printed with parameters values forced in `minimal_param_node`
+    
