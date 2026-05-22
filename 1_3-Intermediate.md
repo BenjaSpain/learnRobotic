@@ -125,3 +125,55 @@
         cd ~/learnRobotic/ros2_ws # Change to the root of the workspace
         colcon build --packages-select custom_action_interfaces
         ```
+
+## Writing an action server and client (2h)
+
+### Creating `custom_action_cpp` package
+- Create package `custom_action_cpp`:
+    ```bash
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    ros2 pkg create --dependencies custom_action_interfaces rclcpp rclcpp_action rclcpp_components --license Apache-2.0 -- custom_action_cpp
+    ```
+- Add visibility control header (to work and compile in Windows): `~/learnRobotic/ros2_ws/src/custom_action_cpp/include/custom_action_cpp/visibility_control.hpp`
+
+### Writing action server and client
+- Create action server source: `~/learnRobotic/ros2_ws/src/fibonacci_action_server.cpp`
+- Create action client source: `~/learnRobotic/ros2_ws/src/fibonacci_action_client.cpp`
+
+### Configure compilation and build
+- Configure compilation. Add to `CMakeLists.txt`:
+    ```
+    add_library(action_server SHARED src/fibonacci_action_server.cpp)
+    target_include_directories(action_server PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+    target_compile_definitions(action_server PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
+    ament_target_dependencies(action_server "custom_action_interfaces" "rclcpp" "rclcpp_action" "rclcpp_components")
+    rclcpp_components_register_node(action_server PLUGIN "custom_action_cpp::FibonacciActionServer" EXECUTABLE fibonacci_action_server)
+    install(TARGETS action_server ARCHIVE DESTINATION lib LIBRARY DESTINATION lib RUNTIME DESTINATION bin)
+
+    add_library(action_client SHARED src/fibonacci_action_client.cpp) 
+    target_include_directories(action_client PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+    target_compile_definitions(action_client PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
+    ament_target_dependencies(action_client "custom_action_interfaces" "rclcpp" "rclcpp_action" "rclcpp_components")
+    rclcpp_components_register_node(action_client PLUGIN "custom_action_cpp::FibonacciActionClient" EXECUTABLE fibonacci_action_client)
+    install(TARGETS action_client ARCHIVE DESTINATION lib LIBRARY DESTINATION lib RUNTIME DESTINATION bin)
+    ```
+- Build package `custom_action_cpp`:
+    ```bash
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    colcon build --packages-select custom_action_cpp
+    ```
+
+### Run
+- Run action server. New terminal:
+    ```bash
+    # Source environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    ros2 run custom_action_cpp fibonacci_action_server
+    ```
+
+- Run action server. New terminal:
+    ```bash
+    # Source environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    ros2 run custom_action_cpp fibonacci_action_client
+    ```
