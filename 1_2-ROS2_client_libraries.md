@@ -1,4 +1,4 @@
-# Client libraries (WIP)
+# Client libraries (15h20')
 [Beginner: Client libraries](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Colcon-Tutorial.html)
 
 ## Using `colcon` to build packages (1h15')
@@ -810,4 +810,97 @@ ros2 param set /minimal_param_node my_parameter earth
     cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
     # Run 'minimal_param_node'
     ros2 run python_parameters minimal_param_node
+    ```
+
+## Using `ros2doctor` to identify issues (20')
+- `ros2doctor` is used to check ROS2 setup; including platform, version, nerwork, environment, running systems....
+- `ros2doctor` is part of `ros2cli` package
+
+### Check ROS2
+- Check ros2 environment status: `ros2 doctor`
+
+- Check running ROS2 Nodes status:
+    - Launch nodes and then `ros2 doctor`
+    - You will receive feedback of ros2 environment and running nodes
+
+- Get report with full details: `ros2 doctor --report`
+
+## Creating and using plugins - C++ (30')
+- `pluginlib` is a C++ library for loading and unloading plugins from within ROS package.
+- Using `pluginlib` you may not need to link your application to a library - instead can open a libarry at any point without prior configuration
+- In this use case will be created a base package and another that provide the plugins
+
+### Create Base Class Package
+- Create base package `polygon_base`:
+    ```bash
+    # Build package
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    ros2 pkg create --build-type ament_cmake --license Apache-2.0 --dependencies pluginlib --node-name area_node polygon_base
+    ```
+
+- Create source, abstract class: `~/learnRobotic/ros2_ws/src/include/polygon_base/regular_polygon.hpp`
+
+- Make this header available for other classes, exporting it as an interface library
+    - Update `CMakeLists.txt`
+    ```
+    # Library (this will be used as the base class for plugins)
+    add_library(${PROJECT_NAME} INTERFACE)
+    add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+    target_compile_features(${PROJECT_NAME} INTERFACE c_std_99 cxx_std_17)
+    target_include_directories(${PROJECT_NAME} INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+    )
+    target_link_libraries(${PROJECT_NAME} INTERFACE ${pluginlib_TARGETS})
+
+    # Install headers
+    install(DIRECTORY include/
+    DESTINATION include/${PROJECT_NAME}
+    )
+
+    # Install library and export targets
+    install(TARGETS ${PROJECT_NAME}
+    EXPORT export_${PROJECT_NAME}
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+    )
+    install(EXPORT export_${PROJECT_NAME}
+    NAMESPACE ${PROJECT_NAME}::
+    DESTINATION share/${PROJECT_NAME}/cmake
+    )
+    ```
+### CreatePlugin Package
+- Create plugin package `polygon_plugins`:
+    ```bash
+    # Build package
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    ros2 pkg create --build-type ament_cmake --license Apache-2.0 --dependencies polygon_base pluginlib --library-name polygon_plugins polygon_plugins
+    ```
+- Create source for the plugins, `polygon_plugins.cpp`: `~/learnRobotic/ros2_ws/src/polygon_plugins/src/polygon_plugins.cpp`
+
+- Allow ROS toolchaing to locate our plugin. Create `plugins.xml`: `~/learnRobotic/ros2_ws/src/polygon_plugins/plugins.xml`
+
+- Export the plugin via CMakeLists.txt. Add after find_package(pluginlib REQUIRED):
+    `pluginlib_export_plugin_description_file(polygon_base plugins.xml)`
+
+### Use Plugins
+- It can be done in any package. Here we are going to use it in the base package to avoid increase complexity.
+- It will be done updating source of `~/learnRobotic/ros2_ws/src/polygon_base/src/area_node.cpp`
+    - It uses `CLassLoader` class, defined in `class_loader.hpp`
+    
+ - Build packages to update status:   
+    ```bash
+    # Build package
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    colcon build --packages-select polygon_base polygon_plugins
+    ```
+
+- Verify plugins and run the node:
+    ```bash
+    source install/setup.bash
+    # Verify that plugins are registered
+    ros2 plugin list
+    # Run Node
+    ros2 run polygon_base area_node
     ```
