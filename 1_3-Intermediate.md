@@ -61,13 +61,67 @@
     - To use `rosdep` outside ROS. Install it directly:  `pip install rosdep`
 - `rosdep` operation:
     - First time:
-        ```bash
-        # Initialize rosdep
-        sudo rosdep init
-        # Update local cached rosdistro index
-        rosdep update
-        ```
+    ```bash
+    # Initialize rosdep
+    sudo rosdep init
+    # Update local cached rosdistro index
+    rosdep update
+    ```
     - Run `rosdep` to install dependencies:
         ```bash
         rosdep install --from-paths src -y --ignore-src
+        ```
+## Creating an action (10')
+- Steps to define and build an action that can be used with action server/client
+- Creating interface package `custom_action_interfaces`
+    ```bash
+    cd ~/learnRobotic/ && source ros2_env_conf.sh
+    mkdir -p ~/learnRobotic/ros2_ws/src # you can reuse an existing workspace with this naming convention
+    cd ~/learnRobotic/ros2_ws/src
+    ros2 pkg create --build-type ament_cmake --license Apache-2.0 custom_action_interfaces
+    ```
+
+- Defining an action
+    - Action definition is made upt 3 message definitions:
+        - *request*: Initiating new goal
+        - *result*: goal result
+        - *Feedback*: Periodically semt with update about a goal
+    - Create `action/Fibonacci.action`:
+    ```bash
+    cd ~/learnRobotic/ros2_ws/src/custom_action_interfaces
+    # Create action interface
+    mkdir action
+    touch action/Fibonacci.action
+    ```
+    - Update interface into `action/Fibonacci.action`:
+     ```
+     int32 order
+    ---
+    int32[] sequence
+    ---
+    int32[] partial_sequence
+     ```
+
+- Building an action:
+    - Before being able to use this Fibonacci action type, it is need pass definition to `rosidl` code generation pipeline
+    - Add to `CMakeLists.txt`
+        ```
+        find_package(rosidl_default_generators REQUIRED)
+
+        rosidl_generate_interfaces(${PROJECT_NAME}
+            "action/Fibonacci.action"
+        )
+        ```
+    - Add dependencies to `package.xml`
+        ```
+        <version>0.0.1</version>
+        <description>Custom action interfaces for ROS 2</description>
+        <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+        <member_of_group>rosidl_interface_packages</member_of_group>
+        ```
+    - Build package `Fibonacci`
+        ```bash
+        cd ~/learnRobotic/ros2_ws # Change to the root of the workspace
+        colcon build --packages-select custom_action_interfaces
         ```
