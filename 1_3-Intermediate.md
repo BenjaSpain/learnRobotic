@@ -198,7 +198,7 @@
 ### Class of Node
 
 - New Node Class
-    - Include argument in constructor 'NodeOptions'
+    - Include argument in constructor 'NodeOptions' 
     - Not main. Invocation to macro `RCLCPP_COMPONENTS_REGISTER_NODE`
     ```cpp
     namespace palomino
@@ -285,3 +285,177 @@
 - `package.xml`
     - Add dependencies for both build and execute`rclcpp_components`: `<depend>rclcpp_components</depend>`
     - Add more specific dependencies just for build, exec or debug if need
+
+## Composing multiples Nodes in a single process (WiP)
+### Run demos
+- Discover available components:
+```bash
+    # Should be at least:
+    #composition
+    #   composition::Talker
+    #   composition::Listener
+    #   composition::NodeLikeListener
+    #   composition::Server
+    #   composition::Client
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    ros2 component types
+```
+
+#### Run-time composition using ROS services with a publisher and subcriber
+- We use 2 shells:
+    - SHELL 1. Start component Container. Run composed Nodes:
+        `ros2 run rclcpp_components component_container`
+    - SHELL 2. Check and launch Nodes into component container running on SHELL 1:
+```bash
+    # Verify that '/ComponentManager' container is running
+    ros2 component list
+    # Launch Talker. Will run in SHELL 1
+    ros2 component load /ComponentManager composition composition::Talker
+    # Launch Listener. Wwill run in SHELL 1
+    ros2 component load /ComponentManager composition composition::Listener
+    # Inspect state of container. Should show:
+    # /ComponentManager
+    #   1   /talker
+    #   2   /listener
+    ros2 component list
+```
+#### Run-time composition using ROS services with a server and client
+- We use 2 shells:
+    - SHELL 1. Start component Container. Run composed Nodes:
+        `ros2 run rclcpp_components component_container`
+    - SHELL 2. Check and launch Nodes into component container running on SHELL 1:
+```bash
+    # Launch Server. Will run in SHELL 1
+    ros2 component load /ComponentManager composition composition::Server
+    # Launch Client. Will run in SHELL 1
+    ros2 component load /ComponentManager composition composition::Client
+```
+#### Compile-time composition with hardcoded nodes
+....Pending to complete or leave without complete
+
+
+
+## Using the Nodes Interfaces Template Class - C++ (30')
+- `rclcpp::NodeInterfaces<>`:
+    - Reliable and compact interface for all ROS node types
+    - Template class that provides a compact and efficient way to manage Node Interfaces
+
+### Accesing Node Information with a SharedPtr
+- Example with simple `Node`. 
+    - Include function that accepts `SharedPtr`
+    - Create a Object of type `Node` and print nodeName
+```cpp
+    #include <memory>
+    #include "rclcpp/rclcpp.hpp"
+
+    void node_info(rclcpp::Node::SharedPtr node)
+    {
+    RCLCPP_INFO(node->get_logger(), "Node name: %s", node->get_name());
+    }
+
+    class SimpleNode : public rclcpp::Node
+    {
+    public:
+    SimpleNode(const std::string & node_name)
+    : Node(node_name)
+    {
+    }
+    };
+
+    int main(int argc, char * argv[])
+    {
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<SimpleNode>("Simple_Node");
+    node_info(node);
+    }
+```
+### Explicitly pass `rclcpp::node_interfaces`
+- To make code more flexible and compatible with different node types, we use `rclcpp::NodeInterfaces`
+- Example: Create different types of Node and pass their interfaces using `rclcpp::node_interfaces`. Access to properties of the Nodes:
+```cpp
+    void node_info(std::shared_ptr<rclcpp::node_interfaces::NodeBaseInterface> base_interface,
+               std::shared_ptr<rclcpp::node_interfaces::NodeLoggingInterface> logging_interface)
+    {
+    RCLCPP_INFO(logging_interface->get_logger(), "Node name: %s", base_interface->get_name());
+    }
+
+    class SimpleNode : public rclcpp::Node
+    {
+    public:
+    SimpleNode(const std::string & node_name)
+    : Node(node_name)
+    {
+    }
+    };
+
+    class LifecycleTalker : public rclcpp_lifecycle::LifecycleNode
+    {
+    public:
+    explicit LifecycleTalker(const std::string & node_name, bool intra_process_comms = false)
+    : rclcpp_lifecycle::LifecycleNode(node_name,
+        rclcpp::NodeOptions().use_intra_process_comms(intra_process_comms))
+    {}
+    }
+
+    int main(int argc, char * argv[])
+    {
+    rclcpp::init(argc, argv);
+    rclcpp::executors::SingleThreadedExecutor exe;
+    auto node = std::make_shared<SimpleNode>("Simple_Node");
+    auto lc_node = std::make_shared<LifecycleTalker>("Simple_LifeCycle_Node");
+    node_info(node->get_node_base_interface(),node->get_node_logging_interface());
+    node_info(lc_node->get_node_base_interface(),lc_node->get_node_logging_interface());
+    }
+```
+
+### Using rclcpp::NodeInterfaces
+- `rclcpp::NodeInterfaces`: Recommended way of accesing a `Node` type's
+- - Example: Create different types of Node and pass their interfaces using `rclcpp::node_interfaces`. Access to Types of the Nodes:
+```cpp
+    #include <memory>
+    #include <string>
+    #include <thread>
+    #include "lifecycle_msgs/msg/transition.hpp"
+    #include "rclcpp/rclcpp.hpp"
+    #include "rclcpp_lifecycle/lifecycle_node.hpp"
+    #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
+    #include "rclcpp/node_interfaces/node_interfaces.hpp"
+
+    using MyNodeInterfaces =
+    rclcpp::node_interfaces::NodeInterfaces<rclcpp::node_interfaces::NodeBaseInterface, rclcpp::node_interfaces::NodeLoggingInterface>;
+
+    void node_info(MyNodeInterfaces interfaces)
+    {
+    auto base_interface = interfaces.get_node_base_interface();
+    auto logging_interface = interfaces.get_node_logging_interface();
+    RCLCPP_INFO(logging_interface->get_logger(), "Node name: %s", base_interface->get_name());
+    }
+
+    class SimpleNode : public rclcpp::Node
+    {
+    public:
+    SimpleNode(const std::string & node_name)
+    : Node(node_name)
+    {
+    }
+    };
+
+    class LifecycleTalker : public rclcpp_lifecycle::LifecycleNode
+    {
+    public:
+    explicit LifecycleTalker(const std::string & node_name, bool intra_process_comms = false)
+    : rclcpp_lifecycle::LifecycleNode(node_name,
+        rclcpp::NodeOptions().use_intra_process_comms(intra_process_comms))
+    {}
+    };
+
+    int main(int argc, char * argv[])
+    {
+    rclcpp::init(argc, argv);
+    rclcpp::executors::SingleThreadedExecutor exe;
+    auto node = std::make_shared<SimpleNode>("Simple_Node");
+    auto lc_node = std::make_shared<LifecycleTalker>("Simple_LifeCycle_Node");
+    node_info(*node);
+    node_info(*lc_node);
+    }
+```
