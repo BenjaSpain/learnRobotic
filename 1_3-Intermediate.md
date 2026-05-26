@@ -188,3 +188,100 @@
 ### Sources
 - Action server: ~/learnRobotic/ros2_ws/src/py_server_client/fibonacci_action_server.py
 - Action client: ~/learnRobotic/ros2_ws/src/py_server_client/fibonacci_action_client.py
+
+
+## Writing an Composable Node (C+) - (30')
+- Case: 
+    - You have a regular `rclcpp::Node` executable 
+    - You need to runt it in the same process as other nodes to enable more efficient communication
+
+### Class of Node
+
+- New Node Class
+    - Include argument in constructor 'NodeOptions'
+    - Not main. Invocation to macro `RCLCPP_COMPONENTS_REGISTER_NODE`
+    ```cpp
+    namespace palomino
+    {
+        /* ATTENTION: Class Constructor takes `NodeOptions` argument */
+        class VincentDriver(const rclcpp::NodeOptions & options) : Node("vincent_driver", options) : public rclcpp::Node
+        {
+            // ...
+        };
+    }
+    /* ATTENTION: Replace 'main' with a pluginlib-style macro invocation. */
+    #include <rclcpp_components/register_node_macro.hpp>
+    RCLCPP_COMPONENTS_REGISTER_NODE(palomino::VincentDriver)
+    //    int main(int argc, char * argv[])
+    //    {
+    //        rclcpp::init(argc, argv);
+    //        rclcpp::spin(std::make_shared<palomino::VincentDriver>());
+    //        rclcpp::shutdown();
+    //        return 0;
+    //    }  
+    ```
+- Adjust your Python launch file
+    - Need to import `ComposableNodeContainer` and `ComposableNode`
+    - Add the `CompostableNodeContainer` action to the launcher
+    ```py
+    # REPLACE THIS:
+    ##from launch_ros.actions import Node
+    # ..
+
+    ##ld.add_action(Node(
+    ##    package='palomino',
+    ##    executable='vincent_driver',
+        # ..
+    ##))
+    # WITH THIS:
+    from launch_ros.actions import ComposableNodeContainer
+    from launch_ros.descriptions import ComposableNode
+
+    # ..
+    ld.add_action(ComposableNodeContainer(
+        name='a_buncha_nodes',
+        namespace='',
+        package='rclcpp_components',
+        executable='component_container',
+        composable_node_descriptions=[
+            ComposableNode(
+                package='palomino',
+                plugin='palomino::VincentDriver',
+                name='vincent_driver',
+                # ..
+                extra_arguments=[{'use_intra_process_comms': True}],
+            ),
+        ]
+    ))
+    ```
+
+### Configure package
+- `CMakeLists.txt`
+    1. Add `rclcpp_components` as dependency
+        ´find_package(rclcpp_components REQUIRED)`
+    2. Remove typical executable configurations:
+        - `add_executable`: `add_executable(vincent_driver src/vincent_driver.cpp)`
+        - `install`:        `install(TARGETS vincent_driver DESTINATION lib/${PROJECT_NAME}`
+    3. Add library resource: `add_library(vincent_driver_component SHARED src/vincent_driver.cpp)`
+    4. Replace other build commands to the new tarjet. Example
+        `ament_target_dependencies(vincent_driver ...)` becomes `ament_target_dependencies(vincent_driver_component "rclcpp_components" ...)`
+    5. Declare your component
+        `rclcpp_components_register_node(
+            vincent_driver_component
+            PLUGIN "palomino::VincentDriver"
+            EXECUTABLE vincent_driver
+        )`
+    6. Change installation commands in CMake to install as library in spite of old executable way
+        - Do not install target into `lib/${PROJECT_NAME}` but library installation
+        ```
+        ament_export_targets(export_vincent_driver_component)
+        install(TARGETS vincent_driver_component
+                EXPORT export_vincent_driver_component
+                ARCHIVE DESTINATION lib
+                LIBRARY DESTINATION lib
+                RUNTIME DESTINATION bin
+        )
+        ```
+- `package.xml`
+    - Add dependencies for both build and execute`rclcpp_components`: `<depend>rclcpp_components</depend>`
+    - Add more specific dependencies just for build, exec or debug if need
