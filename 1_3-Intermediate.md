@@ -126,7 +126,7 @@
         colcon build --packages-select custom_action_interfaces
         ```
 
-## Writing an action server and client (2h)
+## Writing an action server and client - C++ (2h)
 
 ### Creating `custom_action_cpp` package
 - Create package `custom_action_cpp`:
@@ -136,9 +136,11 @@
     ```
 - Add visibility control header (to work and compile in Windows): `~/learnRobotic/ros2_ws/src/custom_action_cpp/include/custom_action_cpp/visibility_control.hpp`
 
+
 ### Writing action server and client
-- Create action server source: `~/learnRobotic/ros2_ws/src/fibonacci_action_server.cpp`
-- Create action client source: `~/learnRobotic/ros2_ws/src/fibonacci_action_client.cpp`
+- Create action server source: `~/learnRobotic/ros2_ws/src/custom_action_cpp/src/fibonacci_action_server.cpp`
+- Create action client source: `~/learnRobotic/ros2_ws/src/custom_action_cpp/src/fibonacci_action_client.cpp`
+
 
 ### Configure compilation and build
 - Configure compilation. Add to `CMakeLists.txt`:
@@ -177,3 +179,12 @@
     cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
     ros2 run custom_action_cpp fibonacci_action_client
     ```
+
+## Writing an action server and client - Python (2h)
+
+- Elaborate asyncronous action server an client un python
+- Add progressively complexity to the implementation: goal_handler, result resturn, feedback
+
+### Sources
+- Action server: ~/learnRobotic/ros2_ws/src/py_server_client/fibonacci_action_server.py
+- Action client: ~/learnRobotic/ros2_ws/src/py_server_client/fibonacci_action_client.py
