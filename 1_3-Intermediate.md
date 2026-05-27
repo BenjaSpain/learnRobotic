@@ -764,11 +764,51 @@
 ```
 
 - Set parameters. New Terminal
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+        # Set an_int_param
+        ros2 param set node_with_parameters an_int_param 44
+        # Set another_double_param
+        ros2 param set node_with_parameters another_double_param 4.4
+    ```
+
+## Launch (WiP)
+- Launch files allow to start up and configure multiple executables simultaneously
+
+### Creating a launch file (30')
+- Launch file include configurations as programs to run, where to run them, arguments to pass and other ROS-specific conventions
+- Launch files as well may monitor state of launched processes, report it and react to changes.
+- Tipical formats are:
+    - `XML`
+    - `YAML`
+    - `Python`
+
+- Create work directory inside workspace:
 ```bash
-    # Init environment
+    cd ~/learnRobotic/ros2_ws && mkdir launch
+```
+
+- Write launch file:
+    - XML:      `~/learnRobotic/ros2_ws/turtlesim_mimic_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/turtlesim_mimic_launch.yaml`
+    - Python:   `~/learnRobotic/ros2_ws/turtlesim_mimic_launch.py`
+
+- Run Launch file:
+    ```bash
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/launch
+        # Choose your launch file format....
+        ros2 launch turtlesim_mimic_launch.xml
+        #ros2 launch turtlesim_mimic_launch.yaml
+        #ros2 launch turtlesim_mimic_launch.py
+    ```
+    - Launch file in case of provided by a package: 
+        - Command: `ros2 launch <package_name> <launch_file_name>`
+        - Make sure to add your dependency in the package configuration to avoid missings `launch` resource: `<exec_depend>ros2launch</exec_depend>`
+
+- Check system is launched. New terminal:
+```bash
     cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
-    # Set an_int_param
-    ros2 param set node_with_parameters an_int_param 44
-    # Set another_double_param
-    ros2 param set node_with_parameters another_double_param 4.4
+    # Choose your launch file format....
+   ros2 topic pub -r 1 /turtlesim1/turtle1/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 2.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: -1.8}}"
 ```
