@@ -331,7 +331,7 @@
     ros2 component load /ComponentManager composition composition::Client
 ```
 #### Compile-time composition with hardcoded nodes
-....Pending to complete or leave without complete
+....¡¡¡¡Pending to complete or leave without complete!!!
 
 
 
@@ -459,3 +459,173 @@
     node_info(*lc_node);
     }
 ```
+
+## Monitoring for parameter changes - C++ (1h30')
+- `ParameterEventHandler` class that lets to monitor and respond to own Node's parameter changes
+
+### Create and configure Package
+- Create package `cpp_parameter_event_handler` with dependencies
+```bash
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    ros2 pkg create --build-type ament_cmake --license Apache-2.0 cpp_parameter_event_handler --dependencies rclcpp
+```
+
+- Update `package.xml`
+    ```
+    <version>0.0.1</version>
+    <description>C++ parameter events client tutorial</description>
+
+    ```
+- Update `CMakeLists.txt` to find files for executable and add dependencies
+    ```
+    add_executable(parameter_event_handler src/parameter_event_handler.cpp)
+    ament_target_dependencies(parameter_event_handler rclcpp)
+
+    install(TARGETS parameter_event_handler DESTINATION lib/${PROJECT_NAME}
+    )
+    ```
+
+### Node source (C++)
+- Node Source: `~/learnRobotic/ros2_ws/src/cpp_parameter_event_handler/src/parameter_event_handler.cpp`
+
+### Build and Run
+- Build `cpp_parameter_event_handler`:
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro $ROS_DISTRO -y
+    # Build package
+    colcon build --packages-select cpp_parameter_event_handler
+```
+- Run Node. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run Node
+    ros2 run cpp_parameter_event_handler parameter_event_handler
+```
+
+- Change Parameter of Running Node. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run Node
+    ros2 param set node_with_parameters an_int_param 43
+```
+
+### Extensions
+#### Use Case: Monitor Changes to another node's parameters
+- From a Node you can check parameter changes of another Node
+
+- On original source: `~/learnRobotic/ros2_ws/src/cpp_parameter_event_handler/src/parameter_event_handler.cpp`
+    - Add to Constructor `cb_handler2` remote nodes params monitoring:
+```cpp
+    // Now, add a callback to monitor any changes to the remote node's parameter. In this
+    // case, we supply the remote node name.
+    auto cb2 = [this](const rclcpp::Parameter & p) {
+        RCLCPP_INFO(
+        this->get_logger(), "cb2: Received an update to parameter \"%s\" of type: %s: \"%.02lf\"",
+        p.get_name().c_str(),
+        p.get_type_name().c_str(),
+        p.as_double());
+    };
+    auto remote_node_name = std::string("parameter_blackboard");
+    auto remote_param_name = std::string("a_double_param");
+    cb_handle2_ = param_subscriber_->add_parameter_callback(remote_param_name, cb2, remote_node_name);
+```
+    - Add new callback declaration
+```cpp
+    private:
+    std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
+    std::shared_ptr<rclcpp::ParameterCallbackHandle> cb_handle_;
+    std::shared_ptr<rclcpp::ParameterCallbackHandle> cb_handle2_;  // Add this
+    };
+```
+- Rebuild package `cpp_parameter_event_handler`:
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+        # Run Node
+        colcon build --packages-select cpp_parameter_event_handler
+    ```
+
+- Run:
+    - Run rebuilt executable. New terminal:
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+        # Run Node
+        ros2 run cpp_parameter_event_handler parameter_event_handler
+    ```
+    - Run the `parameter_blackboard` demo application. New Terminal:
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+        # Run Node
+        ros2 run demo_nodes_cpp parameter_blackboard
+    ```
+    - Set parameter on `parameter_blackboard`
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+        # Run Node
+        ros2 param set parameter_blackboard a_double_param 3.45
+    ```
+#### Use Case: Monitor all nodes parameters simultaneously
+- To monitor multiple nodes or parameters at the same time, it would be cumbersome to call `add_parameter_callback` once for each of them
+- `add_parameter_event_callback` register a single callback that fires when any parameters of any nodes change.
+
+- On original source: `~/learnRobotic/ros2_ws/src/cpp_parameter_event_handler/src/parameter_event_handler.cpp`
+    - Add event parameter monitoring and callback
+```cpp
+    this->declare_parameter("another_double_param", 0.0);
+
+    ...
+
+    auto event_cb = [this](const rcl_interfaces::msg::ParameterEvent & parameter_event) {
+        RCLCPP_INFO(
+        this->get_logger(), "Received parameter event from node \"%s\"",
+        parameter_event.node.c_str());
+
+        for (const auto& p : parameter_event.changed_parameters) {
+        RCLCPP_INFO(
+            this->get_logger(), "Inside event: \"%s\" changed to %s",
+            p.name.c_str(),
+            rclcpp::Parameter::from_parameter_msg(p).value_to_string().c_str());
+        };
+    };
+
+    event_cb_handle_ = param_subscriber_->add_parameter_event_callback(event_cb);
+```
+    - Add new callback declaration
+```cpp
+    private:
+    ...
+    std::shared_ptr<rclcpp::ParameterEventCallbackHandle> event_cb_handle_;
+```
+
+- Rebuild package `cpp_parameter_event_handler`:
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+        # Run Node
+        colcon build --packages-select cpp_parameter_event_handler
+    ```
+- Run:
+    - Run rebuilt executable. New terminal:
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+        # Run Node
+        ros2 run cpp_parameter_event_handler parameter_event_handler
+    ```
+    - Set parameters `an_int_param` and `another_double_param`. Check handlers used in each case
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+        # Set an_int_param to int -> Original CB is launched
+        ros2 param set node_with_parameters an_int_param 44
+        # Set an_int_param to double -> New param events CB is launched
+        ros2 param set node_with_parameters another_double_param 4.4
+    ```
