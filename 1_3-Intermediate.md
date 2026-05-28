@@ -813,7 +813,7 @@
    ros2 topic pub -r 1 /turtlesim1/turtle1/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 2.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: -1.8}}"
 ```
 
-### Integrating launch files into ROS 2 packages (WiP)
+### Integrating launch files into ROS 2 packages (30')
 - How add launch file into existing package
 ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
 
@@ -859,7 +859,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
 ```bash
     # Init environment
     cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
-    # Run Node
+    # Build package
     colcon build --packages-select py_launch_example
 ```
 
@@ -872,3 +872,138 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     ## ros2 launch py_launch_example my_script_launch.py
     ## ros2 launch py_launch_example my_script_launch.yaml
 ```
+
+### Using substitutions (1h15')
+- Used in `arguments` to provide flexibility on describing reusable launch files
+- Are `variables` only evaluated during execution of launch file: `launch configuration`, `environment variables`, `python expresions`, etc
+
+#### Create package
+- Create Package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    # Create package. Python case
+    ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_tutorial
+    # Create package. C++ case
+    ros2 pkg create --build-type ament_cmake --license Apache-2.0 cpp_launch_tutorial    
+```
+
+- Create launch file
+```bash
+    # Python
+    mkdir py_launch_tutorial/launch
+    # C++
+    mkdir cpp_launch_tutorial/launch
+```
+
+- Configure package to use launch files
+    - Python. Add to `setup.py`
+        ```py
+        import os
+        from glob import glob
+        from setuptools import find_packages, setup
+
+        package_name = 'py_launch_tutorial'
+
+        setup(
+            # Other parameters ...
+            data_files=[
+                # ... Other data files
+                # Include all launch files.
+                (os.path.join('share', package_name, 'launch'), glob('launch/*'))
+            ]
+        )
+        ```
+
+    - C++. Add to `CMakeLists.txt`, before `ament_package()`
+        ```txt
+        install(DIRECTORY
+                launch
+                DESTINATION share/${PROJECT_NAME}/
+        )
+        ```
+#### Create Launch Files
+- Parent Launch File, includes variables and references to Substitution launch file:
+    - XML:
+        - Python: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_main_launch.xml`
+        - cpp: `~/learnRobotic/ros2_ws/src/cpp_launch_tutorial/launch/example_main_launch.xml`
+    - YAML:
+        - Python: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_main_launch.yaml`
+        - cpp: `~/learnRobotic/ros2_ws/src/cpp_launch_tutorial/launch/example_main_launch.yaml`
+    - Python:
+        - Python: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_main_launch.py`
+        - cpp: `~/learnRobotic/ros2_ws/src/cpp_launch_tutorial/launch/example_main_launch.py`
+
+- Substitution Launch File, load values to variables, pass actions to launch file, etc:
+    - XML:
+        - Python: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_substitutions_launch.xml`
+        - cpp: `~/learnRobotic/ros2_ws/src/cpp_launch_tutorial/launch/example_substitutions_launch.xml`
+    - YAML:
+        - Python: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_substitutions_launch.yaml`
+        - cpp: `~/learnRobotic/ros2_ws/src/cpp_launch_tutorial/launch/example_substitutions_launch.yaml`
+    - Python:
+        - Python: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_substitutions_launch.py`
+        - cpp: `~/learnRobotic/ros2_ws/src/cpp_launch_tutorial/launch/example_substitutions_launch.py`
+
+#### Build packages
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Build Package. Python
+    colcon build --packages-select py_launch_tutorial
+    # Build Package. C+
+    colcon build --packages-select cpp_launch_tutorial
+```
+
+#### Launch examples
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Launch your choosen format
+    ##  ros2 launch launch_tutorial example_main_launch.yaml
+    ##  ros2 launch launch_tutorial example_main_launch.xml
+    ##  ros2 launch launch_tutorial example_main_launch.py
+```
+
+#### Modify launch arguments
+- To check arguments that may be given to launch file
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+        # Launch your choosen format
+        ##  ros2 launch cpp_launch_tutorial example_substitutions_launch.yaml --show-args
+        ##  ros2 launch py_launch_tutorial example_substitutions_launch.yaml --show-args
+        ##  ros2 launch cpp_launch_tutorial example_substitutions_launch.xml --show-args
+        ##  ros2 launch py_launch_tutorial example_substitutions_launch.xml --show-args
+        ##  ros2 launch cpp_launch_tutorial example_substitutions_launch.py --show-args
+        ##  ros2 launch py_launch_tutorial example_substitutions_launch.py --show-args    
+    ```
+    - Should show:
+    ```
+    Arguments (pass arguments as '<name>:=<value>'):
+
+    'turtlesim_ns':
+        no description given
+        (default: 'turtlesim1')
+
+    'use_provided_red':
+        no description given
+        (default: 'False')
+
+    'new_background_r':
+        no description given
+        (default: '200')
+    ```
+
+- Pass desired arguments to launch file
+    ```bash
+        # Init environment
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+        # Launch your choosen format with desired variables
+        ##  ros2 launch cpp_launch_tutorial example_substitutions_launch.yaml turtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
+        ##ros2 launch py_launch_tutorial example_substitutions_launch.yaml turtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
+        ##  ros2 launch cpp_launch_tutorial example_substitutions_launch.xml turtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
+        ##ros2 launch py_launch_tutorial example_substitutions_launch.xml turtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
+        ##  ros2 launch cpp_launch_tutorial example_substitutions_launch.pyturtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
+        ##ros2 launch py_launch_tutorial example_substitutions_launch.py turtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
+    ```
