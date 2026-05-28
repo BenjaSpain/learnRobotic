@@ -812,3 +812,63 @@
     # Choose your launch file format....
    ros2 topic pub -r 1 /turtlesim1/turtle1/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 2.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: -1.8}}"
 ```
+
+### Integrating launch files into ROS 2 packages (WiP)
+- How add launch file into existing package
+ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
+
+#### Create Package `py_launch_example` structure
+
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    # Create package. Case Python
+    ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
+    # Case Python
+    ##  mkdir py_launch_example/launch
+```
+
+- Package structure wich content launch files should be:
+    - Python package:
+        ```
+            src/
+                py_launch_example/
+                    launch/
+                    package.xml
+                    py_launch_example/
+                    resource/
+                    setup.cfg
+                    setup.py
+                    test/
+        ```
+        - Update `setup.py` to enable colcon to locate launch files
+
+    - C++ package (Add at end of `CMakeLists.txt`, before `ament_package()`):
+    ```
+        # Install launch files
+        install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
+    ```
+
+#### Writing the launch file
+- XML:      `~/learnRobotic/ros2_ws/src/py_launch_example/launch/my_script_launch.xml`
+- YAML:     `~/learnRobotic/ros2_ws/src/py_launch_example/launch/my_script_launch.yaml`
+- Python:   `~/learnRobotic/ros2_ws/src/py_launch_example/launch/my_script_launch.py`
+
+#### Build and Run launch file
+- Build executable
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Run Node
+    colcon build --packages-select py_launch_example
+```
+
+- Run. New Terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run Node. Use your launch format case
+    ## ros2 launch py_launch_example my_script_launch.xml
+    ## ros2 launch py_launch_example my_script_launch.py
+    ## ros2 launch py_launch_example my_script_launch.yaml
+```
