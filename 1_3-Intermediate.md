@@ -286,7 +286,7 @@
     - Add dependencies for both build and execute`rclcpp_components`: `<depend>rclcpp_components</depend>`
     - Add more specific dependencies just for build, exec or debug if need
 
-## Composing multiples Nodes in a single process (WiP)
+## Composing multiples Nodes in a single process (2h)
 ### Run demos
 - Discover available components:
 ```bash
@@ -773,7 +773,7 @@
         ros2 param set node_with_parameters another_double_param 4.4
     ```
 
-## Launch (WiP)
+## Launch (4h35')
 - Launch files allow to start up and configure multiple executables simultaneously
 
 ### Creating a launch file (30')
@@ -1131,4 +1131,52 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
         - YAML:     `ros2 launch py_launch_tutorial launch_turtlesim_PushROSNamespace_launch.yaml`
         - PYTHON:   `ros2 launch py_launch_tutorial launch_turtlesim_PushROSNamespace_launch.py`
 
+## tf2 (WiP)
+### Introducing tf2 (30')
+- This demo use `tf2` library to create 3 coordinate frames: `world`, `turtle1` and `turtle2`
+- Demo workflow:
+    - `tf2 broadcaster`: Publish one turtle coordinate frames
+    - `tf2 listener`: Susbcribe to turtle coordiante frame publish, compute difference in the turtle frames
+    - Move one turtle to follow the other
 
+- Install need tools
+```bash
+    sudo apt-get update && sudo apt-get install ros-jazzy-rviz2 ros-jazzy-turtle-tf2-py ros-jazzy-tf2-ros ros-jazzy-tf2-tools ros-jazzy-turtlesim
+```
+- Run:
+    - Run demo `turtle_tf2_py`
+```bash
+        # Init environment to use ROS2
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+        # Run demo turtle_tf2_py
+        ros2 launch turtle_tf2_py turtle_tf2_demo.launch.py
+```
+
+    - Run `turtle_teleop_key`. New Terminal:
+```bash
+        # Init environment to use ROS2
+        cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+        # Run turtle_teleop_key
+        ros2 run turtlesim turtle_teleop_key
+```
+
+### Using tf tools
+- `view_frames`
+    - Creates a diagram of the frames being broadcast by tf2 over ROS. ***Only works on Linux***
+    - `tf2 listener` listen frames that are broadcasting over ROS and drawing a tree of how the frames are connected
+    - Draw tree of broadcasting for running demo: `ros2 run tf2_tools view_frames`
+    - It generates diagram in root of workspace: `frames<date_of_creation>.pdf`
+
+- `tf2_echo`
+    - Reports transform between any two frames broadcast over ROS
+    - Command format: `ros2 run tf2_ros tf2_echo [source_frame] [target_frame]`
+    - Use case: Transform of the `turtle2` frame with respect to `turtle1` frame: 
+        - Command: `ros2 run tf2_ros tf2_echo turtle2 turtle1`
+        - Result: echo valuest that listener receives the frames broadcast over ROS 2
+
+- `riv2` and `tf2`
+    - `rviz2` is a visualization tool useful for examining tf2 frames poses
+    - Use case: Look our turtle frames using rviz2 using a configuration file (`-d` argument)
+        `ros2 run rviz2 rviz2 -d $(ros2 pkg prefix --share turtle_tf2_py)/rviz/turtle_rviz.rviz`
+
+### Writing a static broadcaster - Python (WiP)
