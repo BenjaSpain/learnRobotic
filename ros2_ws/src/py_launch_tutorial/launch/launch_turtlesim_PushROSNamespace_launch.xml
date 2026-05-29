@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <group>
+    <push_ros_namespace namespace="turtlesim2" />
+    <include file="$(find-pkg-share py_launch_tutorial)/launch/turtlesim_world_2_launch.xml" />
+  </group>
+</launch>

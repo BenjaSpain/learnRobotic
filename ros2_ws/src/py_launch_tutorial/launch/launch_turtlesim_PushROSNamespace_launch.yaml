@@ -1,0 +1,8 @@
+%YAML 1.2
+---
+launch:
+    - group:
+        - push_ros_namespace:
+            namespace: "turtlesim2"
+        - include:
+            file: "$(find-pkg-share launch_tutorial)/launch/turtlesim_world_2_launch.yaml"

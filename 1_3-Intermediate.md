@@ -1012,7 +1012,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
 - Events handlers cab be registered for specific events by launch files
 
 #### Event handler example launch file
-- Source: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_event_handlers_launch.py`
+- Launch file: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_event_handlers_launch.py`
 
 #### Build and Run package
 ```bash
@@ -1025,3 +1025,110 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     # Launch launch file
     ros2 launch py_launch_tutorial example_event_handlers_launch.py turtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
 ```
+
+### Managing large projects (2h)
+- Large project's launch files should be well structured to reuse it as much as possible in different situations
+- We may have several nodes with several parameters for each node
+
+#### Top-level organization
+- Make launch files as reausable as possible
+- Cluster related nodes and configurations in different launch files
+- Add top-level launch file dedicated to specific use cases
+- Top-level launch files should be short, consist of includes to other files corresponding to subcomponents of the application, and commonly changed parameters
+- Create top-level launch file that inside launches other launch files to cover each cluster of workflows:
+    - Python:   `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/launch_turtlesim_launch.py`
+    - XML:      `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/launch_turtlesim_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/launch_turtlesim_launch.yaml`
+ 
+#### Parameters
+- Create launch file `turtlesim_world_1_launch.*` which starts `turtlesim_node` with params
+    - Python:   `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_1_launch.py`
+    - XML:      `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_1_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_1_launch.yaml`
+
+- Create second launch file, `turtlesim_world_2_launch.*`, which starts other turtlesim with parameter values from a YAML configuration file
+    - Python:   `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_2_launch.py`
+    - XML:      `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_2_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_2_launch.yaml`
+
+- Add the YAML configuration file `turtlesim.yaml` in `/config`: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/config/turtlesim.yaml`
+
+#### Using wildcards in YAML files
+- Wildcard characters acts as substitutions for unknown characters in a text value
+- It lets to apply same parameters to several different nodes.
+- Create launch file `turtlesim_world_3_launch.*` which include one more node `turtlesim_node` in a new namespace `turtlesim3`:
+    - Python:   `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_3_launch.py`
+    - XML:      `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_3_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_3_launch.yaml`
+- To use an unique config file for any node and namespace `~/learnRobotic/ros2_ws/src/py_launch_tutorial/config/tourtlesim.yaml`, we use wildcard:
+    - Original config file
+    ```yaml
+        /turtlesim2/sim:
+            ros__parameters:
+                background_b: 255
+                background_g: 86
+                background_r: 150
+    ```
+    - Updated config file to be usable for all nodes and namespaces:
+    ```yaml
+        /**:
+            ros__parameters:
+                background_b: 255
+                background_g: 86
+                background_r: 150
+    ```
+
+#### Namespaces
+- `namespaces` allow to start similar nodes without node name or topic name conflicts
+- To define large number of namespaces in a launch file we can use `PushROSNamespace`.
+- `PushROSNamespace` action:
+    - Define global namespace for each launch file; each nested node will inherit global namespaces automatically
+    - Hast to be the first action in the list
+
+- Update package `py_launch_tutorial` to use `PushROSNamespace`:
+    - Remove `namespace='turtlesim2'` line from launch file:
+        - Python:   `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_2_launch.py`
+        - XML:      `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_2_launch.xml`
+        - YAML:     `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/turtlesim_world_2_launch.yaml`
+    - Create main launch files using namespaces with `PushROSNamespace`
+        - Python:   `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/launch_turtlesim_PushROSNamespace_launch.py`
+        - XML:      `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/launch_turtlesim_PushROSNamespace_launch.xml`
+        - YAML:     `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/launch_turtlesim_PushROSNamespace_launch.yaml`
+
+#### Reusing nodes
+...
+#### Parameter overrides
+...
+#### Remapping
+...
+#### Config files
+..
+#### Environment variables
+...
+#### Running launch files
+- Update `setup.py` to include launch files, configuration and share folders
+    ```py
+        import os
+        from glob import glob
+        from setuptools import setup
+        ...
+
+        data_files=[
+            ...
+            (os.path.join('share', package_name, 'launch'),
+                glob('launch/*')),
+            (os.path.join('share', package_name, 'config'),
+                glob('config/*.yaml')),
+            (os.path.join('share', package_name, 'rviz'),
+                glob('config/*.rviz')),
+        ],
+    ```
+
+- Build and Run
+    - Build package
+    - Run using your choosen launch file format:
+        - XML:      `ros2 launch py_launch_tutorial launch_turtlesim_PushROSNamespace_launch.xml`
+        - YAML:     `ros2 launch py_launch_tutorial launch_turtlesim_PushROSNamespace_launch.yaml`
+        - PYTHON:   `ros2 launch py_launch_tutorial launch_turtlesim_PushROSNamespace_launch.py`
+
+
