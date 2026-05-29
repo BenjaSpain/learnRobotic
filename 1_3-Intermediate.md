@@ -1007,3 +1007,21 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
         ##  ros2 launch cpp_launch_tutorial example_substitutions_launch.pyturtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
         ##ros2 launch py_launch_tutorial example_substitutions_launch.py turtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
     ```
+
+### Using event handlers (20')
+- Events handlers cab be registered for specific events by launch files
+
+#### Event handler example launch file
+- Source: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_event_handlers_launch.py`
+
+#### Build and Run package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Build
+    colcon build --packages-select py_launch_tutorial   
+    # Init package environment
+    source install/setup.bash
+    # Launch launch file
+    ros2 launch py_launch_tutorial example_event_handlers_launch.py turtlesim_ns:='turtlesim3' use_provided_red:='True' new_background_r:=200
+```
