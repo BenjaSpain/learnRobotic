@@ -1014,7 +1014,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
 #### Event handler example launch file
 - Launch file: `~/learnRobotic/ros2_ws/src/py_launch_tutorial/launch/example_event_handlers_launch.py`
 
-#### Build and Run package
+#### Build and Run
 ```bash
     # Init environment
     cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
@@ -1179,4 +1179,91 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     - Use case: Look our turtle frames using rviz2 using a configuration file (`-d` argument)
         `ros2 run rviz2 rviz2 -d $(ros2 pkg prefix --share turtle_tf2_py)/rviz/turtle_rviz.rviz`
 
-### Writing a static broadcaster - Python (WiP)
+### Writing a static broadcaster - Python (1h)
+- Publishing static transforms is usefulto define relationship between a robot base and its sensors or non-moving parts
+- In current tutorial:
+    1. Publish static transforms to tf2
+    2. Use commandline `static_transform_publisher` tool in `tf2_ros`
+
+#### Create package `learning_tf2_py`
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    # Create package. Python case
+    ros2 pkg create --build-type ament_python --license Apache-2.0 -- learning_tf2_py
+```
+
+#### Download source of broadcaster node
+```bash
+    cd learning_tf2_py/learning_tf2_py && wget https://raw.githubusercontent.com/ros/geometry_tutorials/jazzy/turtle_tf2_py/turtle_tf2_py/static_turtle_tf2_broadcaster.py
+```
+
+#### Configure package
+- Configure `package.xml` with general description and dependencies
+```
+    <version>0.0.1</vesrion>
+    <description>Learning tf2 with rclpy</description>
+    ...
+    <exec_depend>geometry_msgs</exec_depend>
+    <exec_depend>python3-numpy</exec_depend>
+    <exec_depend>rclpy</exec_depend>
+    <exec_depend>tf2_ros_py</exec_depend>
+    <exec_depend>turtlesim</exec_depend>
+```
+
+- Configure `setup.py`. Add following line between the `'console_scripts':` brackets: 
+    `'static_turtle_tf2_broadcaster = learning_tf2_py.static_turtle_tf2_broadcaster:main',`
+
+
+
+#### Build and Run
+- Build
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_py
+
+    # Init package environment
+    source install/setup.bash
+    # Launch launch file
+```
+- Run. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ros2_ws && source install/setup.bash
+    # Run executable
+    ros2 run learning_tf2_py static_turtle_tf2_broadcaster mystaticturtle 0 0 1 0 0 0
+```
+- Check that static transform has been published. New terminal
+```
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check that transform published
+    ros2 topic echo /tf_static
+```
+
+#### Publish static transforms with `static_transform_publisher`
+- `tf2_ros` provides an executable,  `static_transform_publisher` that can be used as a commandline tool or as a node that you can add to your launchfiles. Use cases:
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Publish static transform to tf2
+    ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 1 --yaw 0 --pitch 0 --roll 0 --frame-id world --child-frame-id mystaticturtle
+    # Publish static transform to tf2, rotation as quaternions
+    ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 1 --qx 0 --qy 0 --qz 0 --qw 1 --frame-id world --child-frame-id mystaticturtle
+```
+
+- `static_transform_publisher` can be used as well within a launc file:
+    - Python:   `~/learnRobotic/ros2_ws/src/learning_tf2_py/launch/static_transform_publisher_launch.py`
+    - XML:      `~/learnRobotic/ros2_ws/src/learning_tf2_py/launch/static_transform_publisher_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/src/learning_tf2_py/launch/static_transform_publisher_launch.yaml`
+
+
+
+
+- Note: ***Note that all arguments except for --frame-id and --child-frame-id are optional; if a particular option isn’t specified, then the identity will be assumed.***
+
