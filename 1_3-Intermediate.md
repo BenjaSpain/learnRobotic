@@ -1160,7 +1160,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
         ros2 run turtlesim turtle_teleop_key
 ```
 
-### Using tf tools
+#### Using tf tools
 - `view_frames`
     - Creates a diagram of the frames being broadcast by tf2 over ROS. ***Only works on Linux***
     - `tf2 listener` listen frames that are broadcasting over ROS and drawing a tree of how the frames are connected
@@ -1180,7 +1180,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
         `ros2 run rviz2 rviz2 -d $(ros2 pkg prefix --share turtle_tf2_py)/rviz/turtle_rviz.rviz`
 
 ### Writing a static broadcaster - Python (1h)
-- Publishing static transforms is usefulto define relationship between a robot base and its sensors or non-moving parts
+- Publishing static transforms is useful to define relationship between a robot base and its sensors or non-moving parts
 - In current tutorial:
     1. Publish static transforms to tf2
     2. Use commandline `static_transform_publisher` tool in `tf2_ros`
@@ -1214,8 +1214,6 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
 - Configure `setup.py`. Add following line between the `'console_scripts':` brackets: 
     `'static_turtle_tf2_broadcaster = learning_tf2_py.static_turtle_tf2_broadcaster:main',`
 
-
-
 #### Build and Run
 - Build
 ```bash
@@ -1225,11 +1223,8 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     rosdep install -i --from-path src --rosdistro jazzy -y
     # Build
     colcon build --packages-select learning_tf2_py
-
-    # Init package environment
-    source install/setup.bash
-    # Launch launch file
 ```
+
 - Run. New terminal
 ```bash
     # Init environment
@@ -1251,9 +1246,9 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
 ```bash
     # Init environment
     cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
-    # Publish static transform to tf2
+    # Publish static transform to tf2. 1m offset in Z, not rotatio
     ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 1 --yaw 0 --pitch 0 --roll 0 --frame-id world --child-frame-id mystaticturtle
-    # Publish static transform to tf2, rotation as quaternions
+    # Publish static transform to tf2, using quaternions. . 1m offset in Z, not rotation
     ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 1 --qx 0 --qy 0 --qz 0 --qw 1 --frame-id world --child-frame-id mystaticturtle
 ```
 
@@ -1262,8 +1257,91 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     - XML:      `~/learnRobotic/ros2_ws/src/learning_tf2_py/launch/static_transform_publisher_launch.xml`
     - YAML:     `~/learnRobotic/ros2_ws/src/learning_tf2_py/launch/static_transform_publisher_launch.yaml`
 
-
-
-
 - Note: ***Note that all arguments except for --frame-id and --child-frame-id are optional; if a particular option isn’t specified, then the identity will be assumed.***
 
+### Writing a static broadcaster - C++ (45')
+- IDEM than previous but with C++ in spite of Python
+
+#### Create package `learning_tf2_cpp`
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws/src
+    # Create package with dependencies
+    ros2 pkg create --build-type ament_cmake --license Apache-2.0 --dependencies geometry_msgs rclcpp tf2 tf2_ros turtlesim -- learning_tf2_cpp
+```
+
+#### Download source of broadcaster node
+```bash
+    cd ~/learnRobotic/ros2_ws/src/learning_tf2_cpp/src
+    wget https://raw.githubusercontent.com/ros/geometry_tutorials/jazzy/turtle_tf2_cpp/src/static_turtle_tf2_broadcaster.cpp
+```
+
+#### Configure package
+- `package.xml`
+    - Dependencies shoulbe already there, 
+    - Update version and description
+      ```xml
+        <version>0.0.1</version>
+        <description>Learning tf2 with rclcpp</description>
+      ```
+
+- `CMkaleLists.txt`
+    - Add executable, dependencies of build and install Target. 
+    ```txt
+        add_executable(static_turtle_tf2_broadcaster src/static_turtle_tf2_broadcaster.cpp)
+        ament_target_dependencies(
+            static_turtle_tf2_broadcaster
+            geometry_msgs
+            rclcpp
+            tf2
+            tf2_ros
+        )
+
+        install(TARGETS
+            static_turtle_tf2_broadcaster
+            DESTINATION lib/${PROJECT_NAME})
+    ```
+
+#### Build and Run
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp
+```
+
+- Run. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run executable
+    ros2 run learning_tf2_cpp static_turtle_tf2_broadcaster mystaticturtle 0 0 1 0 0 0
+```
+
+- Check that static tf has been broadcasted. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # show tf_static topic
+    ros2 topic echo /tf_static
+```
+
+#### Publish static transforms with `static_transform_publisher`
+- In a normal development process, to broadcast static transform, we may use executable `static_transform_publisher` of `tf2_ros`
+
+- From command line:
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Publish static transform to tf2. 1m offset in Z, not rotatio
+    ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 1 --yaw 0 --pitch 0 --roll 0 --frame-id world --child-frame-id mystaticturtle
+    # Publish static transform to tf2, rotation as quaternions
+    ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 1 --qx 0 --qy 0 --qz 0 --qw 1 --frame-id world --child-frame-id mystaticturtle
+```
+
+- From launch file. 
+    - Python:   `~/learnRobotic/ros2_ws/src/learning_tf2_cpp/launch/static_transform_publisher_launch.py`
+    - XML:      `~/learnRobotic/ros2_ws/src/learning_tf2_cpp/launch/static_transform_publisher_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/src/learning_tf2_cpp/launch/static_transform_publisher_launch.yaml`
