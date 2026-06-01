@@ -1424,3 +1424,76 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     cd ~/learnRobotic/ && source ros2_env_conf.sh
     ros2 run tf2_ros tf2_echo world turtle1
 ```
+
+### Writing a broadcaster - C++ (45')
+- How to broadcast state of a robot to `tf2`
+- We work in this section in package previously created `learning_tf2_cpp`
+
+#### Download source of broadcaster node
+```bash
+    # Navigate to folder of py sources
+    cd ~/learnRobotic/ros2_ws/src/learning_tf2_cpp/src
+    # Download source of broadcaster
+    wget https://raw.githubusercontent.com/ros/geometry_tutorials/jazzy/turtle_tf2_cpp/src/turtle_tf2_broadcaster.cpp
+
+```
+
+#### Configure package
+- `CMakeLists.txt`
+    - Add executable, dependencies and Target so that `run2 run` can find it
+    ```txt
+        add_executable(turtle_tf2_broadcaster src/turtle_tf2_broadcaster.cpp)
+        ament_target_dependencies(
+            turtle_tf2_broadcaster
+            geometry_msgs
+            rclcpp
+            tf2
+            tf2_ros
+            turtlesim
+        )
+
+        install(TARGETS turtle_tf2_broadcaster DESTINATION lib/${PROJECT_NAME})
+    ```
+    - Add launch files inside `launch/` folder will be installed
+    ```txt
+        install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+    ```
+
+- `package.xml`
+    - Add execution dependencies for launch folders
+    ```xml
+        <exec_depend>launch</exec_depend>
+        <exec_depend>launch_ros</exec_depend>
+    ```
+
+#### Build and Run
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp
+```
+
+- Run using launch file. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run using launch file
+    ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xml
+    ## ros2 launch learning_tf2_py turtle_tf2_demo_launch.py
+    ## ros2 launch learning_tf2_py turtle_tf2_demo_launch.yaml
+```
+
+- Run `turle_teleop__key`. New terminal
+```bash
+    cd ~/learnRobotic/ && source ros2_env_conf.sh
+    ros2 run turtlesim turtle_teleop_key
+```
+
+- Run `tf2_echo` to check if `turtle1` pose is getting broadcasted to `tf2`. New terminal
+```bash
+    cd ~/learnRobotic/ && source ros2_env_conf.sh
+    ros2 run tf2_ros tf2_echo world turtle1
+```
