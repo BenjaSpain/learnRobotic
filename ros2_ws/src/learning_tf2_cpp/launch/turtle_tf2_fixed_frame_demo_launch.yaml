@@ -1,0 +1,9 @@
+%YAML 1.2
+---
+launch:
+  - include:
+      file: "$(find-pkg-share learning_tf2_cpp)/launch/turtle_tf2_demo_launch.xml"
+  - node:
+      pkg: "learning_tf2_cpp"
+      exec: "fixed_frame_tf2_broadcaster"
+      name: "fixed_broadcaster"

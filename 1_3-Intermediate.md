@@ -1753,3 +1753,144 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     ## ros2 launch learning_tf2_py turtle_tf2_dynamic_frame_demo_launch.xml
     ## ros2 launch learning_tf2_py turtle_tf2_dynamic_frame_demo_launch.yaml
 ```
+
+### Adding a frame - C++ (20')
+- IDEM than for Python
+
+#### Download source of new frame, `carrot1`, into package `learning_tf2_cpp`
+- New frame `carrot1`:
+    - Child of `turtle1`
+    - Goal for second turtle
+```bash
+    # Navigate to folder of py sources
+    cd ~/learnRobotic/ros2_ws/src/learning_tf2_cpp/src
+    # Download source
+    wget https://raw.githubusercontent.com/ros/geometry_tutorials/jazzy/turtle_tf2_cpp/src/fixed_frame_tf2_broadcaster.cpp
+
+```
+
+#### Reconfigure package `learning_tf2_py`
+- `CMakelists.txt`
+    - Add executable and depependencies:
+    ```txt
+        add_executable(fixed_frame_tf2_broadcaster src/fixed_frame_tf2_broadcaster.cpp)
+        ament_target_dependencies(
+            fixed_frame_tf2_broadcaster
+            geometry_msgs
+            rclcpp
+            tf2_ros
+        )
+    ```
+    - Install executable into build
+    ```txt
+        install(TARGETS
+            fixed_frame_tf2_broadcaster
+            DESTINATION lib/${PROJECT_NAME})
+    ```
+
+#### Create new launch file `turtle_tf2_fixed_frame_demo_launch.*`
+- Import required packages and creates `demo_nodes` variable that will store nodes that we created in previous tutotial's file
+    - Python:   `~/learnRobotic/ros2_ws/src/learning_tf2_py/launch/turtle_tf2_fixed_frame_demo_launch.py`
+    - XML:      `~/learnRobotic/ros2_ws/src/learning_tf2_py/launch/turtle_tf2_fixed_frame_demo_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/src/learning_tf2_py/launch/turtle_tf2_fixed_frame_demo_launch.yaml`
+
+#### Build and Run
+- Build package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp
+```
+
+- Run using launch file. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run using launch file
+    ros2 launch learning_tf2_cpp turtle_tf2_fixed_frame_demo_launch.py
+    ## ros2 launch learning_tf2_cpp turtle_tf2_fixed_frame_demo_launch.xml
+    ## ros2 launch learning_tf2_cpp turtle_tf2_fixed_frame_demo_launch.yaml
+```
+
+- Move `turtle1` with teleop and `turtle2` should follow `turtle1`. New Terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Run teleop
+    ros2 run turtlesim turtle_teleop_key
+```
+
+- Check how our `turtle2` follow carrot instead of `turtle1`. New Terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run teleop
+    ros2 launch learning_tf2_py turtle_tf2_fixed_frame_demo_launch.xml target_frame:=carrot1
+    ## ros2 launch learning_tf2_py turtle_tf2_fixed_frame_demo_launch.yaml target_frame:=carrot1
+    ## ros2 launch learning_tf2_py turtle_tf2_fixed_frame_demo_launch.py target_frame:=carrot1    
+```
+
+- While running this examples, generates frame trees to check new frames s  tructure. New Terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Run teleop
+    ros2 run tf2_tools view_frames
+```
+
+##### Dynamic. Download dynamic broadcaster source
+```bash
+    # Navigate to folder of py sources
+    cd ~/learnRobotic/ros2_ws/src/learning_tf2_cpp/src
+    # Download source
+    wget https://raw.githubusercontent.com/ros/geometry_tutorials/jazzy/turtle_tf2_cpp/src/dynamic_frame_tf2_broadcaster.cpp
+```
+
+##### Reconfigure package `learning_tf2_cpp`
+- `CMakelists.txt`
+    - Add executable and depependencies:
+    ```txt
+        add_executable(dynamic_frame_tf2_broadcaster src/dynamic_frame_tf2_broadcaster.cpp)
+        ament_target_dependencies(
+            dynamic_frame_tf2_broadcaster
+            geometry_msgs
+            rclcpp
+            tf2_ros
+        )
+    ```
+    - Install executable into build
+    ```txt
+        install(TARGETS
+            dynamic_frame_tf2_broadcaster
+            DESTINATION lib/${PROJECT_NAME})
+    ```
+
+##### Create new launch file `turtle_tf2_dynamic_frame_demo_launch.*`
+- Import required packages and creates `demo_nodes` variable that will store nodes that we created in previous tutotial's file
+    - Python:   `~/learnRobotic/ros2_ws/src/learning_tf2_cpp/launch/turtle_tf2_dynamic_frame_demo_launch.py`
+    - XML:      `~/learnRobotic/ros2_ws/src/learning_tf2_cpp/launch/turtle_tf2_dynamic_frame_demo_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/src/learning_tf2_cpp/launch/turtle_tf2_dynamic_frame_demo_launch.yaml`
+
+#### Build and Run
+- Build package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp
+```
+
+- Run using launch file. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run using launch file
+    ros2 launch learning_tf2_cpp turtle_tf2_dynamic_frame_demo_launch.xml
+    ## ros2 launch learning_tf2_cpp turtle_tf2_dynamic_frame_demo_launch.yaml
+    ## ros2 launch learning_tf2_cpp turtle_tf2_dynamic_frame_demo_launch.py
+```
