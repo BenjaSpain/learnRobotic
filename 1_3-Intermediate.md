@@ -1385,7 +1385,6 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
             from glob import glob
         ```
 
-
 - `package.xml`
     - Add dependencies:
     ```xml
@@ -1425,7 +1424,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     ros2 run tf2_ros tf2_echo world turtle1
 ```
 
-### Writing a broadcaster - C++ (30')
+### Writing a broadcaster - C++ (45')
 - How to broadcast state of a robot to `tf2`
 - We work in this section in package previously created `learning_tf2_cpp`
 
@@ -1497,7 +1496,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     ros2 run tf2_ros tf2_echo world turtle1
 ```
 
-### Writing a listener - Python (40')
+### Writing a listener - Python (30')
 - Create tf2 listener, python
 - We use already created package `learning_tf2_py`
 
@@ -1544,6 +1543,76 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     ros2 launch learning_tf2_py turtle_tf2_demo_launch.py
     ## ros2 launch learning_tf2_py turtle_tf2_demo_launch.xml
     ## ros2 launch learning_tf2_py turtle_tf2_demo_launch.yaml
+```
+
+- Move `turtle1` with teleop and `turtle2` should follow `turtle1`
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Run teleop
+    ros2 run turtlesim turtle_teleop_key
+```
+
+### Writing a listener - C++ (20')
+- Create tf2 listener, C++
+- We use already created package `learning_tf2_cpp`
+
+#### Download source of listener node into package `learning_tf2_cpp`
+```bash
+    # Navigate to folder of py sources
+    cd ~/learnRobotic/ros2_ws/src/learning_tf2_cpp/src
+    # Download source
+    wget https://raw.githubusercontent.com/ros/geometry_tutorials/jazzy/turtle_tf2_cpp/src/turtle_tf2_listener.cpp
+```
+
+#### Reconfigure package `learning_tf2_cpp`
+- `CMakelists.txt`
+    - Add executable-source and dependencies to let `ros2 run` to locate it
+```txt
+    add_executable(turtle_tf2_listener src/turtle_tf2_listener.cpp)
+    ament_target_dependencies(
+        turtle_tf2_listener
+        geometry_msgs
+        rclcpp
+        tf2
+        tf2_ros
+        turtlesim
+    )
+```
+    - Install your executable inside the build package
+```txt
+    install(TARGETS
+    turtle_tf2_listener
+    DESTINATION lib/${PROJECT_NAME})
+```
+
+#### Update launch file `turtle_tf2_demo_launch.*`
+- Declare a `target_frame` launch argument
+- Start a broadcaster node for second turtle that we will spawn
+- Start a listener node that will subscribe to those transformations
+- Update:
+    - Python:   `~/learnRobotic/ros2_ws/src/learning_tf2_cpp/launch/turtle_tf2_demo_launch.py`
+    - XML:      `~/learnRobotic/ros2_ws/src/learning_tf2_cpp/launch/turtle_tf2_demo_launch.xml`
+    - YAML:     `~/learnRobotic/ros2_ws/src/learning_tf2_cpp/launch/turtle_tf2_demo_launch.yaml`
+
+#### Build and Run
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp
+```
+
+- Run using launch file. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run using launch file
+    ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.py
+    ## ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xml
+    ## ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.yaml
 ```
 
 - Move `turtle1` with teleop and `turtle2` should follow `turtle1`
