@@ -77,11 +77,14 @@ private:
             tf2::TimePointZero);
         } catch (const tf2::TransformException & ex) { */
         rclcpp::Time now = this->get_clock()->now();
+        rclcpp::Time when = now - rclcpp::Duration(5, 0);
         try {
             t = tf_buffer_->lookupTransform(
                 toFrameRel,
-                fromFrameRel,
                 now,
+                fromFrameRel,
+                when,
+                "world",
                 50ms);
         } catch (const tf2::TransformException & ex) {
           RCLCPP_INFO(

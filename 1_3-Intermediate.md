@@ -1916,7 +1916,6 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     } catch (const tf2::TransformException & ex) {
 ```
 
-#### Build and Run
 - Build package
 ```bash
     # Init environment
@@ -1959,7 +1958,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
             50ms);
     } catch (const tf2::TransformException & ex) {
 ```
-#### Build and Run
+
 - Build package
 ```bash
     # Init environment
@@ -1980,8 +1979,104 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.py
 ```
 
+### Traveling in time - C++ (20')
+- `tf2` library is is able to transform data in time as well as in space
+- `tf2` time travel feature may be useful tasks as:
+    - Monitoring pose of robot for a long period of time
+    - Build a follower robot that follow `steps` of leader with delay
+- Current example: To look up transforms back in time and program `turtle2` to follow 5 seconds behind `carrot1`
 
 
+#### Time travel - example
+- On `learning_tf2_cpp`, modify node `turtle_tf2_listener.cpp`: Second turtle instead of go to where carrot is now, it will go to where first carrot was 5 seconds ago
+```cpp
+    /*
+    try {
+        t = tf_buffer_->lookupTransform(
+        toFrameRel, fromFrameRel,
+        tf2::TimePointZero);
+    } catch (const tf2::TransformException & ex) { */
+    rclcpp::Time when = this->get_clock()->now() - rclcpp::Duration(5, 0);
+    try {
+        t = tf_buffer_->lookupTransform(
+            toFrameRel,
+            fromFrameRel,
+            when,
+            50ms);
+    } catch (const tf2::TransformException & ex) {
+```
 
-#### Check result
+- Build package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp
+```
 
+- Run using launch file. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run
+    ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xml
+    # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xaml
+    # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.py
+```
+
+- This approach has a bug:
+    - `turtle2` try to go where `turtle1` was 5 seconds ago in function to `turtle2` pose 5 seconds ago.
+    - But `turtle2` is moving itself, so it generates wrong new trayectories that will not reach `turtle1` pose
+
+#### Fix listener node - Use 6 parameters for `lookupTransform()`
+ - What we really want in our example is: “What was the pose of carrot1 5 seconds ago, relative to the current position of the turtle2?”
+ - We can say explicitly when to acquire the specified transformations by calling `lookupTransform()` with additional parameters
+ ```cpp
+    /*
+    try {
+        t = tf_buffer_->lookupTransform(
+        toFrameRel, fromFrameRel,
+        tf2::TimePointZero);
+    } catch (const tf2::TransformException & ex) { */
+    rclcpp::Time now = this->get_clock()->now();
+    rclcpp::Time when = now - rclcpp::Duration(5, 0);
+    try {
+        t = tf_buffer_->lookupTransform(
+            toFrameRel,
+            now,
+            fromFrameRel,
+            when,
+            "world",
+            50ms);
+    } catch (const tf2::TransformException & ex) {
+```
+
+- 6 arguments:
+1. Target frame
+2. The time to transform to
+3. Source frame
+4. The time at which source frame will be evaluated
+5. Frame that does not change over time, in this case the world frame
+6. Time to wait for the target frame to become available
+
+- Build package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp
+```
+
+- Run using launch file. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run
+    ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xml
+    # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xaml
+    # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.py
+```
