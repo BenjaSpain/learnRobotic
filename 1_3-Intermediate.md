@@ -1894,3 +1894,94 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     ## ros2 launch learning_tf2_cpp turtle_tf2_dynamic_frame_demo_launch.yaml
     ## ros2 launch learning_tf2_cpp turtle_tf2_dynamic_frame_demo_launch.py
 ```
+
+
+### Using time - C++ (20')
+- To get a transform at a specific time and wait for a transform to be available on the tf2 tree using `lookupTransform()` function
+
+#### Update listener node
+- In `learning_tf2_cpp` update `turtle_tf2_listener.cpp` to request a frame transform at time “now”
+```cpp
+    /*
+    try {
+        t = tf_buffer_->lookupTransform(
+        toFrameRel, fromFrameRel,
+        tf2::TimePointZero);
+    } catch (const tf2::TransformException & ex) { */
+    rclcpp::Time now = this->get_clock()->now();
+    try {
+        t = tf_buffer_->lookupTransform(
+            toFrameRel, fromFrameRel,
+            now);
+    } catch (const tf2::TransformException & ex) {
+```
+
+#### Build and Run
+- Build package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp
+```
+
+- Run using launch file. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run
+    ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xml
+    # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xaml
+    # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.py     
+```
+
+- The output tells you that the frame does not exist or that the data is in the future.
+- Error is because you should wait a few milliseconds for that information to arrive.
+
+#### Fix listener node
+- `tf2` provides a tool that will wait until a transform becomes available, adding `timeout` param to `lookupTransform()`
+- Using this `timeout` `lookupTransform()` will actually block until the transform between the two turtles becomes available. If `timeout` expires and transform is not available, an exception will be raised
+```cpp
+    /*
+    try {
+        t = tf_buffer_->lookupTransform(
+        toFrameRel, fromFrameRel,
+        tf2::TimePointZero);
+    } catch (const tf2::TransformException & ex) { */
+    rclcpp::Time now = this->get_clock()->now();
+    try {
+        t = tf_buffer_->lookupTransform(
+            toFrameRel,
+            fromFrameRel,
+            now,
+            50ms);
+    } catch (const tf2::TransformException & ex) {
+```
+#### Build and Run
+- Build package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp    
+```
+
+- Run using launch file. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run
+    ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xml
+    # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xaml
+    # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.py
+```
+
+
+
+
+#### Check result
+
