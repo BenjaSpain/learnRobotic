@@ -60,6 +60,21 @@ ament_target_dependencies(
 
 install(TARGETS fixed_frame_tf2_broadcaster DESTINATION lib/${PROJECT_NAME})
 
+
+add_executable(turtle_tf2_listener_debug src/turtle_tf2_listener_debug.cpp)
+ament_target_dependencies(
+    turtle_tf2_listener_debug
+    geometry_msgs
+    rclcpp
+    tf2
+    tf2_ros
+    turtlesim
+)
+
+install(TARGETS turtle_tf2_listener_debug DESTINATION lib/${PROJECT_NAME})
+
+
+
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 

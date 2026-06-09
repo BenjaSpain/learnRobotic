@@ -1979,7 +1979,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.py
 ```
 
-### Traveling in time - C++ (20')
+### Traveling in time - C++ (30')
 - `tf2` library is is able to transform data in time as well as in space
 - `tf2` time travel feature may be useful tasks as:
     - Monitoring pose of robot for a long period of time
@@ -2080,3 +2080,186 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
     # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.xaml
     # ros2 launch learning_tf2_cpp turtle_tf2_demo_launch.py
 ```
+
+### Debugging (30')
+- Some debugging tools are `tf2_echo`, `tf2_monitor`, `view_frames`
+
+#### Setting and starting example
+- Into `learning_tf2_cpp/src`. Copy `turtle_tf2_listener.cpp` and rename as `turtle_tf2_listener_debug.cpp`
+
+- Apply some changes to source:
+    - Change line 65 to:
+    ```cpp
+    // std::string toFrameRel = "turtle2";
+    std::string toFrameRel = "turtle3";
+    ```
+
+    - Change lines 73-77 to:
+    ```cpp
+    // try {
+    //  t = tf_buffer_->lookupTransform(
+    //  toFrameRel, fromFrameRel,
+    //  tf2::TimePointZero);
+    // } catch (const tf2::TransformException & ex) {
+    try {
+        t = tf_buffer_->lookupTransform(
+            toFrameRel, fromFrameRel,
+            this->now());
+    } catch (const tf2::TransformException & ex) {
+    ```
+
+- Create new launch files in `launch` folder:
+    - `start_tf2_debug_demo_launch.py`
+    ```python
+    from launch import LaunchDescription
+    from launch.actions import DeclareLaunchArgument
+    from launch.substitutions import LaunchConfiguration
+    from launch_ros.actions import Node
+
+
+    def generate_launch_description():
+        return LaunchDescription([
+            DeclareLaunchArgument(
+                'target_frame', default_value='turtle1',
+                description='Target frame name.'
+            ),
+            Node(
+                package='turtlesim',
+                executable='turtlesim_node',
+                name='sim',
+                output='screen'
+            ),
+            Node(
+                package='learning_tf2_cpp',
+                executable='turtle_tf2_broadcaster',
+                name='broadcaster1',
+                parameters=[
+                    {'turtlename': 'turtle1'}
+                ]
+            ),
+            Node(
+                package='learning_tf2_cpp',
+                executable='turtle_tf2_broadcaster',
+                name='broadcaster2',
+                parameters=[
+                    {'turtlename': 'turtle2'}
+                ]
+            ),
+            Node(
+                package='learning_tf2_cpp',
+                executable='turtle_tf2_listener_debug',
+                name='listener_debug',
+                parameters=[
+                    {'target_frame': LaunchConfiguration('target_frame')}
+                ]
+            ),
+        ])
+    ```
+
+    - `start_tf2_debug_demo_launch.xml`
+    ```xml
+    <?xml version="1.0" encoding="UTF-8"?>
+    <launch>
+        <arg name="target_frame" default="turtle1" description="Target frame name." />
+        <node pkg="turtlesim" exec="turtlesim_node" name="sim" output="screen" />
+        <node pkg="learning_tf2_cpp" exec="turtle_tf2_broadcaster" name="broadcaster1">
+            <param name="turtlename" value="turtle1" />
+        </node>
+        <node pkg="learning_tf2_cpp" exec="turtle_tf2_broadcaster" name="broadcaster2">
+            <param name="turtlename" value="turtle2" />
+        </node>
+        <node pkg="learning_tf2_cpp" exec="turtle_tf2_listener_debug" name="listener_debug">
+            <param name="target_frame" value="$(var target_frame)" />
+        </node>
+    </launch>
+    ```
+
+    - `start_tf2_debug_demo_launch.yaml`
+    ```yaml
+    %YAML 1.2
+    ---
+    launch:
+    - arg:
+        name: "target_frame"
+        default: "turtle1"
+        description: "Target frame name."
+    - node:
+        pkg: "turtlesim"
+        exec: "turtlesim_node"
+        name: "sim"
+        output: "screen"
+    - node:
+        pkg: "learning_tf2_cpp"
+        exec: "turtle_tf2_broadcaster"
+        name: "broadcaster1"
+        param:
+        - name: "turtlename"
+            value: "turtle1"
+    - node:
+        pkg: "learning_tf2_cpp"
+        exec: "turtle_tf2_broadcaster"
+        name: "broadcaster2"
+        param:
+        - name: "turtlename"
+            value: "turtle2"
+    - node:
+        pkg: "learning_tf2_cpp"
+        exec: "turtle_tf2_listener_debug"
+        name: "listener_debug"
+        param:
+        - name: "target_frame"
+            value: "$(var target_frame)"
+    ```
+
+- Add to `CMakeLists.txt` the executable to build `turtle_tf2_listener_debug`
+
+- Build package & Run
+```bash
+    ros2 launch learning_tf2_cpp start_tf2_debug_demo_launch.xml
+    #ros2 launch learning_tf2_cpp start_tf2_debug_demo_launch.py
+    #ros2 launch learning_tf2_cpp start_tf2_debug_demo_launch.yaml
+```
+
+- Now we can run the example but `turtle2` is not following `turtle1` as it should
+
+#### Finding bugs
+- `tfw_echo`: Find out if `tf2` knows about our transform between `turtle3` and `turtle1`
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run
+    ros2 run tf2_ros tf2_echo turtle3 turtle1
+```
+- Result: `turtle3` does not exist
+
+- `view_frames`: Get graphical representation of existing frames
+```bash 
+ros2 run tf2_tools view_frames
+```
+- We can graphically see that `turtle3` does not exist
+- We solve this issue: Line 65 of source restablishing original value of `turtle2`
+- New issue appears with `timestamp` that we are going to debug now:
+- `tf2_monitor`: Get stadisitics on timing
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # tf2_monitor
+    ros2 run tf2_ros tf2_monitor turtle2 turtle1
+```
+- We find out a 3 ms delay for the chain from `turtle2` to `turtle1`.
+- Solve it by modifying lines 73-77 to ask for transform between turtles 100 ms ago:
+```cpp
+try {
+  t = tf_buffer_->lookupTransform(
+    toFrameRel, fromFrameRel,
+    this->now() - rclcpp::Duration::from_seconds(0.1));
+} catch (const tf2::TransformException & ex) {
+```
+- Run and check that now `turtle2` is following to `turtle1`
+```bash
+ros2 launch learning_tf2_cpp start_tf2_debug_demo_launch.xml
+#ros2 launch learning_tf2_cpp start_tf2_debug_demo_launch.py
+#ros2 launch learning_tf2_cpp start_tf2_debug_demo_launch.yaml
+```
+
+
