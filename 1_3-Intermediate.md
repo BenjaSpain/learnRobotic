@@ -2495,3 +2495,92 @@ print(f'The quaternion representation is x: {q[0]} y: {q[1]} z: {q[2]} w: {q[3]}
     # Run filter/messge node
     ros2 run learning_tf2_cpp turtle_tf2_message_filter
 ```
+
+## Testion (0)
+- SKIPPED SECTION
+- NOT HIGH PRIORITY IN CURRENT PRIORITY LEARNING PATH
+
+## URDF (WiP)
+- **URDF** (Unified Robot Description Format):
+    - File format for specifying geometry and organization of robots in ROS
+    - URDF follows [XML](https://wiki.ros.org/urdf/XML) format
+
+### Building a visual robot model from scratch (2h)
+- Build a visual model of a robot that can view in `Rviz`
+- Before starting we need to have installed [urdf_tutorial](https://index.ros.org/p/urdf_tutorial/) package
+- Check if `joint_state_publisher` package is already installed in your environment.
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Check if it is already installed 
+    ros2 pkg list | grep joint_state_publisher
+    ##  If installed should show packages:
+    ##      joint_state_publisher
+    ##      joint_state_publisher_gui
+    ros2 pkg prefix joint_state_publisher
+    ##  If installed will shows package installation path
+    rosdep check joint_state_publisher
+    ##  If installed will shows package
+```
+
+- If not instaled -> Clone and build the package [urdf_tutorial](https://github.com/ros/urdf_tutorial.git):
+```bash
+    # Download package for ROS2
+    cd ~/learnRobotic/ros2_ws/src/
+    git clone https://github.com/ros/urdf_tutorial
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies & install when need
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build new package
+    colcon build --packages-select urdf_tutorial
+```
+
+#### One Shape
+- First URDF model is a basic cylindrical link: `~/learnRobotic/ros2_ws/src/urdf_tutorial/urdf/01-myfirst.urdf`
+- Examinate the model in Rviz:
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Launch model '01-myfirst.urdf'
+    ros2 launch urdf_tutorial display.launch.py model:=urdf/01-myfirst.urdf
+```
+- This launcher:
+    - Load model `urdf/01-myfirst.urdf`
+    - Saves it as a parameter of node `robot_state_publisher`
+    - Run nodes to publish `sensor_msgs/msg/JointState` and transforms
+    - Starts `Rviz` with a configuration file
+
+#### Multiple Shapes
+- Second URDF model add to the basic cylindrical a second link and an *inflexible* or *fixed* joint: `urdf/02-multipleshapes.urdf`
+```bash
+    ros2 launch urdf_tutorial display.launch.py model:=urdf/02-multipleshapes.urdf
+```
+- Both shapes overlap because they share same origin
+- If we want not to overlap we must define more origins
+
+#### Origins
+- Leg (*box*) attaches to top half of torso(*cylinder*)
+- To let this distribution `urdf/03-origins.urdf` displace origins of links and joint
+```bash
+    ros2 launch urdf_tutorial display.launch.py model:=urdf/03-origins.urdf
+```
+- If a TF frame does not exist for a given URDF link -> It will be placed at the origin in white
+
+#### Material Girl
+- Now we add definition of material "blue" and material "white"
+- Materials have color channels defined
+- Values must to be in the range [0,1]
+- Textures as well can be specified with a image file
+```bash
+    ros2 launch urdf_tutorial display.launch.py model:=urdf/04-materials.urdf
+```
+
+#### Finish the Model
+- Add more shapes: *feet*, *wheels*, *head*
+- Locate this shapes (*links*) in the right position to emulate parts of the body of a *R2D2* robot
+```bash
+    ros2 launch urdf_tutorial display.launch.py model:=urdf/05-visual.urdf
+```
+- In our URDF file we may import meshes. Formats as STL or DAE are common formats
+- 
