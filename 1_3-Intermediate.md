@@ -2583,4 +2583,71 @@ print(f'The quaternion representation is x: {q[0]} y: {q[1]} z: {q[2]} w: {q[3]}
     ros2 launch urdf_tutorial display.launch.py model:=urdf/05-visual.urdf
 ```
 - In our URDF file we may import meshes. Formats as STL or DAE are common formats
-- 
+
+### Building a movable robot model (45')
+- Now we will define URDF whiches include `movable joints`
+- Common `movable joints` maybe of type:
+    - `continuous`
+    - `revolute`
+    - `prismatic`
+    - `planar`
+    - `floating`
+
+- To allow run current section, we have already built package `urdf_tutorial`
+
+- Launch the model of robot with movable joints:
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Launch model '01-myfirst.urdf'
+    ros2 launch urdf_tutorial display.launch.py model:=urdf/06-flexible.urdf
+```
+
+#### The Head
+- Between `body` and `head` there is a `continuous` joint:
+```xml
+    <joint name="head_swivel" type="continuous">
+        <parent link="base_link"/>
+        <child link="head"/>
+        <axis xyz="0 0 1"/>
+        <origin xyz="0 0 0.3"/>
+    </joint>
+```
+- `continuous` joints:
+    - Can take any angle from negative infinity to positive infinity
+
+#### The Gripper
+- Grippers are modeled as `revolute` joint:
+```xml
+    <joint name="left_gripper_joint" type="revolute">
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="0.0" upper="0.548" velocity="0.5"/>
+        <origin rpy="0 0 0" xyz="0.2 0.01 0"/>
+        <parent link="gripper_pole"/>
+        <child link="left_gripper"/>
+    </joint>
+```
+- `revolute` joint:
+    - Rotate in same way that the continuous joints, but have strict limits
+    - Must include `limit` tag specifying the limits of joints (units are in *radians*)
+    - Must specify maximum velocity and effort
+
+#### The Gripper Arm
+- Gripper arms are `prismatic` joint:
+```xml
+    <joint name="gripper_extension" type="prismatic">
+        <parent link="base_link"/>
+        <child link="gripper_pole"/>
+        <limit effort="1000.0" lower="-0.38" upper="0" velocity="0.5"/>
+        <origin rpy="0 0 0" xyz="0.19 0 0.2"/>
+    </joint>
+```
+- `prismatic` joint:
+    - It moves along an axis
+    - Limits are specified (units are in *meters*)
+
+#### Other Types of Joints
+- `planar` joint:
+    - Can move around in a plane (2D)
+- `floating` joint:
+    - Can move around 3D
