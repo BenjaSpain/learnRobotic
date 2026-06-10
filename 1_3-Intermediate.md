@@ -1131,7 +1131,7 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
         - YAML:     `ros2 launch py_launch_tutorial launch_turtlesim_PushROSNamespace_launch.yaml`
         - PYTHON:   `ros2 launch py_launch_tutorial launch_turtlesim_PushROSNamespace_launch.py`
 
-## tf2 (WiP)
+## tf2 (8h15')
 ### Introducing tf2 (30')
 - This demo use `tf2` library to create 3 coordinate frames: `world`, `turtle1` and `turtle2`
 - Demo workflow:
@@ -1827,7 +1827,6 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
 ```bash
     # Init environment
     cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
-    # Run teleop
     ros2 launch learning_tf2_py turtle_tf2_fixed_frame_demo_launch.xml target_frame:=carrot1
     ## ros2 launch learning_tf2_py turtle_tf2_fixed_frame_demo_launch.yaml target_frame:=carrot1
     ## ros2 launch learning_tf2_py turtle_tf2_fixed_frame_demo_launch.py target_frame:=carrot1    
@@ -1837,7 +1836,6 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
 ```bash
     # Init environment
     cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
-    # Run teleop
     ros2 run tf2_tools view_frames
 ```
 
@@ -2110,106 +2108,8 @@ ros2 pkg create --build-type ament_python --license Apache-2.0 py_launch_example
 
 - Create new launch files in `launch` folder:
     - `start_tf2_debug_demo_launch.py`
-    ```python
-    from launch import LaunchDescription
-    from launch.actions import DeclareLaunchArgument
-    from launch.substitutions import LaunchConfiguration
-    from launch_ros.actions import Node
-
-
-    def generate_launch_description():
-        return LaunchDescription([
-            DeclareLaunchArgument(
-                'target_frame', default_value='turtle1',
-                description='Target frame name.'
-            ),
-            Node(
-                package='turtlesim',
-                executable='turtlesim_node',
-                name='sim',
-                output='screen'
-            ),
-            Node(
-                package='learning_tf2_cpp',
-                executable='turtle_tf2_broadcaster',
-                name='broadcaster1',
-                parameters=[
-                    {'turtlename': 'turtle1'}
-                ]
-            ),
-            Node(
-                package='learning_tf2_cpp',
-                executable='turtle_tf2_broadcaster',
-                name='broadcaster2',
-                parameters=[
-                    {'turtlename': 'turtle2'}
-                ]
-            ),
-            Node(
-                package='learning_tf2_cpp',
-                executable='turtle_tf2_listener_debug',
-                name='listener_debug',
-                parameters=[
-                    {'target_frame': LaunchConfiguration('target_frame')}
-                ]
-            ),
-        ])
-    ```
-
     - `start_tf2_debug_demo_launch.xml`
-    ```xml
-    <?xml version="1.0" encoding="UTF-8"?>
-    <launch>
-        <arg name="target_frame" default="turtle1" description="Target frame name." />
-        <node pkg="turtlesim" exec="turtlesim_node" name="sim" output="screen" />
-        <node pkg="learning_tf2_cpp" exec="turtle_tf2_broadcaster" name="broadcaster1">
-            <param name="turtlename" value="turtle1" />
-        </node>
-        <node pkg="learning_tf2_cpp" exec="turtle_tf2_broadcaster" name="broadcaster2">
-            <param name="turtlename" value="turtle2" />
-        </node>
-        <node pkg="learning_tf2_cpp" exec="turtle_tf2_listener_debug" name="listener_debug">
-            <param name="target_frame" value="$(var target_frame)" />
-        </node>
-    </launch>
-    ```
-
     - `start_tf2_debug_demo_launch.yaml`
-    ```yaml
-    %YAML 1.2
-    ---
-    launch:
-    - arg:
-        name: "target_frame"
-        default: "turtle1"
-        description: "Target frame name."
-    - node:
-        pkg: "turtlesim"
-        exec: "turtlesim_node"
-        name: "sim"
-        output: "screen"
-    - node:
-        pkg: "learning_tf2_cpp"
-        exec: "turtle_tf2_broadcaster"
-        name: "broadcaster1"
-        param:
-        - name: "turtlename"
-            value: "turtle1"
-    - node:
-        pkg: "learning_tf2_cpp"
-        exec: "turtle_tf2_broadcaster"
-        name: "broadcaster2"
-        param:
-        - name: "turtlename"
-            value: "turtle2"
-    - node:
-        pkg: "learning_tf2_cpp"
-        exec: "turtle_tf2_listener_debug"
-        name: "listener_debug"
-        param:
-        - name: "target_frame"
-            value: "$(var target_frame)"
-    ```
 
 - Add to `CMakeLists.txt` the executable to build `turtle_tf2_listener_debug`
 
@@ -2423,4 +2323,175 @@ print(f'The quaternion representation is x: {q[0]} y: {q[1]} z: {q[2]} w: {q[3]}
     q2[3] = current_pose.pose.orientation.w
 
     qr = quaternion_multiply(q2, q1_inv)
+```
+
+### Using stamped dataypes with `tf2_ros::MessageFilter` (45')
+- To use sensor data with `tf2`, `tf2_ros::MessageFilter` is useful.
+- `tf2_ros::MessageFilter`: 
+    - Take suscription to a ROS 2 message with a header
+    - Cache message until it is possible to transofm it into target frame
+
+#### Prerequisites
+- `turtle_tf2_py` installed:
+```bash
+    sudo apt install ros-jazzy-turtle-tf2-py
+```
+
+#### Tasks for example of data sensor tracking
+1. **Write broadcaster node of *PointStamped* messages**
+- This example set up application wich has node to broadcast (in Python) the `PointStamped` position message of `turtle3`
+1.1 Get Source `turtle_tf2_message_broadcaster.py` within `src/learning_tf2_py/learning_tf2_py/`:
+```bash
+    # Go to path
+    cd ~/learnRobotic/ros2_ws/src/learning_tf2_py/learning_tf2_py    
+    # Get source
+    wget https://raw.githubusercontent.com/ros/geometry_tutorials/jazzy/turtle_tf2_py/turtle_tf2_py/turtle_tf2_message_broadcaster.py
+```
+
+1.2 **Write launch file whitin `src/learning_tf2_py/launch/` (Python)**
+- `turtle_tf2_sensor_message_launch.xml`
+- `turtle_tf2_sensor_message_launch.py`
+- `turtle_tf2_sensor_message_launch..yaml`
+
+1.3 Add entry point
+- Allow `ros2 run` to run your node by adding within `setup.py`, between `console_scripts` brackets:
+```py
+    'turtle_tf2_message_broadcaster = learning_tf2_py.turtle_tf2_message_broadcaster:main',
+```
+
+1.4 **Add an data file**
+- Allow `ros2 launch` to launch your new launch file by addding
+    - Import data:
+    ```py
+        ...
+        import os
+        from glob import glob
+    ```
+    - Following between `data_files` brackets:
+    ```py
+        data_files=[
+            ...
+            (os.path.join('share', package_name, 'launch'), glob('launch/*')),
+        ],
+    ```
+
+1.5 **Build**
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_py
+```
+
+2. **Writing the message filter/listener node (C++)**
+2.1 To get streaming `PointStamped` data of `turtle3` in frame `turtle1`, we create source of node *filter/listener*
+```bash
+    # Go to path
+    cd ~/learnRobotic/ros2_ws/src/learning_tf2_cpp/src
+    # Get source
+    wget https://raw.githubusercontent.com/ros/geometry_tutorials/jazzy/turtle_tf2_cpp/src/turtle_tf2_message_filter.cpp
+```
+
+2.2 **Add dependencies, to `package.xml`**
+```xml
+    <depend>message_filters</depend>
+    <depend>tf2_geometry_msgs</depend>
+```
+
+2.3 **Add to `CMakeLists.txt`**
+- Below current dependencies:
+```txt
+    find_package(message_filters REQUIRED)
+    find_package(tf2_geometry_msgs REQUIRED)
+```
+
+- To deal with differences between ROS distributions:
+```txt
+    if(TARGET tf2_geometry_msgs::tf2_geometry_msgs)
+        get_target_property(_include_dirs tf2_geometry_msgs::tf2_geometry_msgs INTERFACE_INCLUDE_DIRECTORIES)
+    else()
+        set(_include_dirs ${tf2_geometry_msgs_INCLUDE_DIRS})
+    endif()
+
+    find_file(TF2_CPP_HEADERS
+        NAMES tf2_geometry_msgs.hpp
+        PATHS ${_include_dirs}
+        NO_CACHE
+        PATH_SUFFIXES tf2_geometry_msgs
+    )
+```
+
+- Add executable named as `turtle_tf2_message_filter`
+```txt
+    add_executable(turtle_tf2_message_filter src/turtle_tf2_message_filter.cpp)
+    ament_target_dependencies(
+    turtle_tf2_message_filter
+    geometry_msgs
+    message_filters
+    rclcpp
+    tf2
+    tf2_geometry_msgs
+    tf2_ros
+    )
+
+    if(EXISTS ${TF2_CPP_HEADERS})
+    target_compile_definitions(turtle_tf2_message_filter PUBLIC -DTF2_CPP_HEADERS)
+    endif()
+```
+
+- Add target so that `ros2 run` can find executable:
+```txt
+    install(TARGETS
+        turtle_tf2_message_filter
+        DESTINATION lib/${PROJECT_NAME})
+```
+
+2.4 **BUILD**
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws
+    # Check dependencies
+    rosdep install -i --from-path src --rosdistro jazzy -y
+    # Build
+    colcon build --packages-select learning_tf2_cpp
+```
+
+3. RUN
+- Run several nodes using launch file:
+    - Bring up `turtlesim` windows with 2 turtles:
+        - `turtle3`: Moving along circle
+        - `turtle1`: Not moving
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run
+    ros2 launch learning_tf2_py turtle_tf2_sensor_message_launch.py
+    # ros2 launch learning_tf2_py turtle_tf2_sensor_message_launch.xml
+    # ros2 launch learning_tf2_py turtle_tf2_sensor_message_launch.yaml
+```
+
+- Run `turtle_teleop_key` to move `turtle1`. New Terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run teleop
+    ros2 run turtlesim turtle_teleop_key
+```
+
+- echo `turtle3` stamped messages, `/turtle3/turtle_point_stamped`. New Terminal: 
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # echo
+    ros2 topic echo /turtle3/turtle_point_stamped
+```
+
+- Run message filter/listener node. New Terminal:
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run filter/messge node
+    ros2 run learning_tf2_cpp turtle_tf2_message_filter
 ```
