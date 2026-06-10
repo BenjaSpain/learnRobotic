@@ -2238,7 +2238,8 @@ ros2 run tf2_tools view_frames
 ```
 - We can graphically see that `turtle3` does not exist
 - We solve this issue: Line 65 of source restablishing original value of `turtle2`
-- New issue appears with `timestamp` that we are going to debug now:
+
+- New issue appears with `timestamp` that we are going to debug now.
 - `tf2_monitor`: Get stadisitics on timing
 ```bash
     # Init environment
@@ -2262,4 +2263,164 @@ ros2 launch learning_tf2_cpp start_tf2_debug_demo_launch.xml
 #ros2 launch learning_tf2_cpp start_tf2_debug_demo_launch.yaml
 ```
 
+### Quaternion fundamentals (30')
+- Quaternion is a 4-tuple representation of orientation, which is more concise than a rotation matrix
 
+#### Components of a quaternion
+- ROS 2 uses quaternions to apply rotations
+- Quaternion has 4 componente: `(x, y, z, w)`
+- **Unit quaternion**: (0, 0, 0, 1). It yields no rotation about x/y/z axes
+- **Unit quaternion** can be created by
+```cpp
+    #include <tf2/LinearMath/Quaternion.h>
+    ...
+
+    tf2::Quaternion q;
+    // Create a quaternion from roll/pitch/yaw in radians (0, 0, 0)
+    q.setRPY(0, 0, 0);
+    // Print the quaternion components (0, 0, 0, 1)
+    RCLCPP_INFO(this->get_logger(), "%f %f %f %f",
+                q.x(), q.y(), q.z(), q.w());
+```
+- Magnitud of a quaternion should be allways one
+- To normalize a quaternion:
+```cpp
+    q.normalize();
+```
+
+#### Quaternion types in ROS 2
+- ROS 2 use 2 quaternion datatype:
+    - `tf2::Quaternion`
+    - `geometry_msgs::msg::Quaternion`
+- To convert between in *C++* use library: `tf2_geometry_msgs` 
+```cpp
+    #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+    ...
+
+    tf2::Quaternion tf2_quat, tf2_quat_from_msg;
+    tf2_quat.setRPY(roll, pitch, yaw);
+    // Convert tf2::Quaternion to geometry_msgs::msg::Quaternion
+    geometry_msgs::msg::Quaternion msg_quat = tf2::toMsg(tf2_quat);
+
+    // Convert geometry_msgs::msg::Quaternion to tf2::Quaternion
+    tf2::convert(msg_quat, tf2_quat_from_msg);
+    // or
+    tf2::fromMsg(msg_quat, tf2_quat_from_msg);
+```
+
+- **Not equivalent in *Python* to `tf2::Quaternion`**. Builtin `list` is used:
+```py
+    from geometry_msgs.msg import Quaternion
+    ...
+
+    # Create a list of floats, which is compatible with tf2
+    # Quaternion methods
+    quat_tf = [0.0, 1.0, 0.0, 0.0]
+
+    # Convert a list to geometry_msgs.msg.Quaternion
+    msg_quat = Quaternion(x=quat_tf[0], y=quat_tf[1], z=quat_tf[2], w=quat_tf[3])
+```
+
+#### Quaternion operations
+1. **Think on RPY and convert to quaternion**
+- Calculate target rotation in terms of 3 individual rotations respect original, unmoving coordinates axes:
+    - Roll (about X-axis)
+    - Pitch (about Y-axis)
+    - Yatch (about Z-axis)
+- Then convert to quaternions
+```py
+# quaternion_from_euler method is available in turtle_tf2_py/turtle_tf2_py/turtle_tf2_broadcaster.py
+q = quaternion_from_euler(1.5707, 0, -1.5707)
+print(f'The quaternion representation is x: {q[0]} y: {q[1]} z: {q[2]} w: {q[3]}.')
+```
+- This techquine is called *fixed (or static) frame RPY*. It is related to **Euler angles**
+
+2. **Applying a quaternion rotation**
+- Apply rotation of one quaternion to a pose: Multiply previous quaternion of pose by the quaternion representing desired rotation
+- *Note: Order of multiplication matters*
+- C++:
+```cpp
+    #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+    ...
+
+    tf2::Quaternion q_orig, q_rot, q_new;
+
+    q_orig.setRPY(0.0, 0.0, 0.0);
+    // Rotate the previous pose by 180* about X
+    q_rot.setRPY(3.14159, 0.0, 0.0);
+    q_new = q_rot * q_orig;
+    q_new.normalize();
+```
+
+- Python:
+```python
+    q_orig = quaternion_from_euler(0, 0, 0)
+    # Rotate the previous pose by 180* about X
+    q_rot = quaternion_from_euler(3.14159, 0, 0)
+    q_new = quaternion_multiply(q_rot, q_orig)
+```
+
+3. **Inverting a quaternion**
+- Easy way to invert a quaternion is to negate x,y,z components:
+```py
+    q[0] = -q[0]
+    q[1] = -q[1]
+    q[2] = -q[2]
+```
+- *Note: Not confuse with negating all elements of the quaternion*
+
+4. **Relative rotations**
+- Relative rotation `q_r` that convert `q_1` to `q_2`:
+`q_2 = q_r * q_1`
+- Can solve `q_r` similarly to a matrix of equations; by right-multiply `q_1_invert` on both sides:
+`q_r = q_2 * q_1_inverse`
+- Example. Get relative rotation from previous robot pose to current robot pose:
+```py
+    def quaternion_multiply(q0, q1):
+        """
+        Multiplies two quaternions.
+
+        Input
+        :param q0: A 4 element array containing the first quaternion (q01, q11, q21, q31)
+        :param q1: A 4 element array containing the second quaternion (q02, q12, q22, q32)
+
+        Output
+        :return: A 4 element array containing the final quaternion (q03,q13,q23,q33) in (w, x, y, z) order
+
+        """
+        # Extract the values from q0
+        x0 = q0[0]
+        y0 = q0[1]
+        z0 = q0[2]
+        w0 = q0[3]
+
+        # Extract the values from q1
+        x1 = q1[0]
+        y1 = q1[1]
+        z1 = q1[2]
+        w1 = q1[3]
+
+        # Compute the product of the two quaternions, term by term
+        q0q1_w = w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1
+        q0q1_x = w0 * x1 + x0 * w1 + y0 * z1 - z0 * y1
+        q0q1_y = w0 * y1 - x0 * z1 + y0 * w1 + z0 * x1
+        q0q1_z = w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1
+
+        # Create a 4 element array containing the final quaternion
+        final_quaternion = np.array([q0q1_w, q0q1_x, q0q1_y, q0q1_z])
+
+        # Return a 4 element array containing the final quaternion (q02,q12,q22,q32)
+        return final_quaternion
+
+    q1_inv[0] = -prev_pose.pose.orientation.x   # Negate for inverse
+    q1_inv[1] = -prev_pose.pose.orientation.y   # Negate for inverse
+    q1_inv[2] = -prev_pose.pose.orientation.z   # Negate for inverse
+    q1_inv[3] = prev_pose.pose.orientation.w
+
+    q2[0] = current_pose.pose.orientation.x
+    q2[1] = current_pose.pose.orientation.y
+    q2[2] = current_pose.pose.orientation.z
+    q2[3] = current_pose.pose.orientation.w
+
+    qr = quaternion_multiply(q2, q1_inv)
+```
