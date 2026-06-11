@@ -2651,3 +2651,80 @@ print(f'The quaternion representation is x: {q[0]} y: {q[1]} z: {q[2]} w: {q[3]}
     - Can move around in a plane (2D)
 - `floating` joint:
     - Can move around 3D
+
+
+### Adding physical and collision properties (2h)
+- Add collision and inertial properties to links
+- Add joint dynamics to joints
+- `collision` and physical properties are added to the robot model in file: `urdf/07-physics.urdf`
+- Links as `base_link` include `<collision>` and physical properties as `<inertial>`
+```xml
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.6" radius="0.2"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.6" radius="0.2"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="10"/>
+      <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
+    </inertial>
+  </link>
+```
+
+#### Collision
+- `<collision>` elements define collisions among our robot elements
+- `<collision>` are subelement of `link`,  at same level than `visual`
+- `<collision>` include a `geometry` tag. Dimensions and origin can be specified
+- In main cases, `collision` geometry correspond to visual geometry.
+- Some case wouldn't. Main cases where wouldn't:
+    - **Quicker Processing**
+        - Collision detection between meshes is more computational complex that between 2 simple geometries
+        - Simplier collision geometries may reduce this effort
+    - **Safe Zones**
+        - For sensitive equipment may be need to restrict movements
+
+#### Physical Properties
+- It let simulate the model using physics engines as Gazebo
+
+##### Inertia
+- `link` element being simulated need an `inertial` tag
+- `inertial` is a subelement of `link`
+    - `mass` is defined in Kg
+    - A 3x3 rotational `inertia` matrix is specified. As it is simetrical maybe represented with just 6 elements: `ixx`, `ixy`, `ixz`, `iyy`, `iyz`, `izz`
+    - `origin` define center of gravity and inertial reference frame (relative to the link reference frame)
+- Inertia of primite geometries maybe obtained from [Wikipedia](https://en.wikipedia.org/wiki/List_of_moments_of_inertia#List_of_3D_inertia_tensors)
+- More complex meshes inertia may be provided by modeling programs as `MeshLab` and others
+- `Inertia tensor` depends on *mass* and *mass distribution* of the object
+- For a *mid-sized link* a matrix with `ixx/iyy/izz=1e-3` or smaller it is reasonable as first approach (box of 0.1 m side with mass of 0,6 Kg)
+
+#### Contact Coefficients
+- `contact_coefficients` are tags inside `collisions` to define how links behave in contact with another
+- 3 attributes:
+    - `mu` (*Friction coeficient*)
+    - `kp` (*Stiffness coeficient*)
+    - `kd` (*Dampening coeficient*)    
+
+#### Joint Dynamics
+- How joint moves is defined by `dynamics` tag of the `joint`
+- 2 attributes:
+    - `friction`
+        - Physical static friction
+        - Units are **Newtow**
+        - For **revolving joints** units are **Newton meter**
+    - `damping`
+        - Physical damping
+        - For **prismatic joint** units are **Newtons seconds per meter**
+        - For **revolving joints** units are **Newton meter seconds per radian**
+- Default value is *zero*
+
+#### Other Tags
+- Other more advanced tags related with `joints` are:
+- `calibration`
+- `safety controller`
