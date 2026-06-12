@@ -2500,7 +2500,7 @@ print(f'The quaternion representation is x: {q[0]} y: {q[1]} z: {q[2]} w: {q[3]}
 - SKIPPED SECTION
 - NOT HIGH PRIORITY IN CURRENT PRIORITY LEARNING PATH
 
-## URDF (WiP)
+## URDF (8h25')
 - **URDF** (Unified Robot Description Format):
     - File format for specifying geometry and organization of robots in ROS
     - URDF follows [XML](https://wiki.ros.org/urdf/XML) format
@@ -3073,3 +3073,33 @@ cd urdf_tutorial_cpp
     # Run rviz2
     rviz2 -d `ros2 pkg prefix urdf_tutorial_r2d2 --share`/r2d2.rviz
 ```
+
+### Generating an URDF File (10')
+- It is possible export URDF models from many CAD  and modeling programs
+
+**CAD Exporters**
+- Blender URDF Exporter
+- CREO Parametric URDF Exporter
+- FreeCAD ROS Workbench
+- RobotCAD (FreeCAD OVERCROSS)
+- Freecad to Gazebo Exporter
+- Fusion 360 URDF Exporter
+- fusion2URDF (Fusion 360, ros2_control, closed loops)
+- FusionSDF: Fusion 360 to SDF exporter
+- OnShape URDF Exporter
+- SolidWorks URDF Exporter
+- ExportURDF Library (Fusion360, OnShape, Solidworks)
+
+**Other URDF Export and Conversion Tools**
+- Gazebo SDFormat to URDF Parser
+- SDF to URDF Converter in Python
+- URDF to Webots Simulator Format
+- The Blender Robotics Tools repository includes a number of useful tools, including a tool to export URDF files from Blender.
+- CoppeliaSim URDF Exporter
+- Isaac Sim URDF Exporter
+
+**Viewing URDF & SDF Files**
+- [Examples of Common URDF Launch Files](https://github.com/ros/urdf_launch)
+- Web Viewer for URDF Files: [GitHub Repo](https://github.com/gkjohnson/urdf-loaders/) & [Live Website](https://gkjohnson.github.io/urdf-loaders/javascript/example/bundle/index.html)
+- [View SDF Models in RViz](https://github.com/Yadunund/view_sdf_rviz)
+- [Jupyterlab URDF Viewer](https://github.com/IsabelParedes/jupyterlab-urdf)
