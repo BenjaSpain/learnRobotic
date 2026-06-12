@@ -3103,3 +3103,125 @@ cd urdf_tutorial_cpp
 - Web Viewer for URDF Files: [GitHub Repo](https://github.com/gkjohnson/urdf-loaders/) & [Live Website](https://gkjohnson.github.io/urdf-loaders/javascript/example/bundle/index.html)
 - [View SDF Models in RViz](https://github.com/Yadunund/view_sdf_rviz)
 - [Jupyterlab URDF Viewer](https://github.com/IsabelParedes/jupyterlab-urdf)
+
+
+## RViz (wip)
+### RViz User Guide (2h)
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Run RViz2
+    ros2 run rviz2 rviz2
+```
+- It executes RViz:
+    - Left: `Displays`
+    - Middle: `3D View`
+    - Right: `Views`
+
+#### Displays
+#### Adding a new display
+
+#### Display Properties
+- Each display gets its own list of properties
+
+#### Display Status
+- Status can be: `OK`, `Warning`, `Error`, `Disabled`
+
+#### Built-in Display Types
+
+#### Configurations
+- A configuration contains:
+    - Displays + their properties
+    - Tool properties
+    - The viewpoint and settings for the 3D visualization
+
+#### Views Panel
+- There are a number of camera types
+- Camera type consist of:
+    - Different way of controlling camera
+    - Different types of projection (Ortographic vs. Perspective)
+
+#### Orbital Camera (default)
+- Simplify rotate around focal point
+
+#### FPS (first-person) Camera
+- Rotates as if you're looking with your head
+
+#### Top-down Orthographic
+- Always look down along Z axis
+- Things do not get smaller as they get farther away
+
+#### XY Orbit
+- Same as the `orbital camera`, with the focus point restricted to the XY plane
+
+#### Third Person Follower
+- Camera maintains a constant viewing angle towards the target frame
+- In contrast to XY Orbit, camera turns if the target frame yaws
+
+#### Custom Views
+- It lets to create different views configurations:
+    - View controller type
+    - View configuration (position, orientation, etc)
+    - Target Frame
+
+#### Coordinates Frames
+- RViz uses `tf` to transform data from `coordinate frame` into `global reference frame`
+
+##### Fixed Frame
+- `fixed frame`  reference frame used to denote `world` frame
+- It is usually `map` or `world`. Can also be others as your `odometry` frame
+- `fixed frame` should not be moving relative to the world
+- If `fixed frame` change, all data currently being shown are cleared rather than re-transformed
+
+##### Target Frame
+- `target frame` is the reference frame for the camera view
+- For example:
+    - If target frame is `map` -> Robot drives around the map
+    - If target frame is `base` of the robot -> Robot stay in the same place while everything else moves relative to it
+
+#### Tools
+##### Interact
+- Lets interact with visualized environment
+- Keyboard shortcut: `i`
+
+##### Move Camera
+- It is the default tool
+- Viewport changes according to options and camera type
+- Keyboard shortcut: `m`
+
+##### Select
+- Allows to select items being displayed in 3D view
+- `f` key will focus the camera on current selection
+- Keyboard shortcut: `s`
+
+##### Focus Camera
+- Select a location in the visualizer -> Camera will focus that point, changing `orientation` but not `position`
+- Keyboard shortcut: `c`
+
+##### Measure
+- Measure distance between points in the visualizer
+    - First click -> Set starting point
+    - Second click -> Set end point of measurement
+    - Resulting distance will be displayed at bottom of RViz windows
+- Keyboard shortcut: `n`
+
+##### 2D Pose Estimate
+- Set an `initial pose` to seed localization system
+- Click on ground plane and drag to select orientation
+- Output topic can be changed in panel `Tool Properties`
+- Keyboard shortcut: `p`
+
+##### 2D Nav Goal
+- Set a goal sent on `goal_pose` ROS topic
+- Click on ground plane and drag to select orientation
+- Output topic can be changed in panel `Tool Properties`
+- Keyboard shortcut: `g`
+
+##### Publish Point
+- Select an object in visualizer and tool will publish coordinates of that point based on the frame
+- Results are shown at bottom
+- Keyboard shortcut: `u`
+
+#### Time
+- Useful when running in a simulator, it allows to see how much ROS Time has passed vs how much Wall Clock time has passed
+- `Time` panel also lets reset visualizer’s internal time state
