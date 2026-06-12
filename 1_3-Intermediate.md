@@ -3225,3 +3225,53 @@ cd urdf_tutorial_cpp
 #### Time
 - Useful when running in a simulator, it allows to see how much ROS Time has passed vs how much Wall Clock time has passed
 - `Time` panel also lets reset visualizer’s internal time state
+
+
+### Marker: Sending Basic Shapes - C++ (2h)
+- `Marker` display lets visualize data without `RViz` needing to know the meaning of that data ahead of time:
+    1. Node sends primitive objects through *visualization_msgs/msg/Marker*  messages
+    2. RViz renders them as arrows, boxes, spheres, cylinders, and other marker types
+
+This tutorial shows how:
+- Use `visualization_msgs/msg/Marker` messages to send basic shapes to RViz
+- Send the four basic shapes: `cube`, `sphere`, `cylinder`, and `arrow`
+- Create a program that sends out a new marker every second, replacing last one with a different shape
+
+#### Create package `visualization_marker_tutorials`
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+
+    cd src
+    # Clone remote repo for `visualization_marker_tutorials`
+    git clone https://github.com/ros-visualization/visualization_tutorials.git
+    # Build package 'visualization_marker_tutorials'
+    cd visualization_tutorials
+    colcon build --packages-select visualization_marker_tutorials
+```
+
+##### Sending markers
+- Source code path: `/learnRobotic/ros2_ws/src/visualization_marker_tutorials/visualization_tutorials/basic_shapes.cpp`
+
+- Run executable
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    cd src
+    # Run executable
+    ros2 run visualization_marker_tutorials basic_shapes
+```
+
+##### Viewing the markers
+- Start RViz. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Start RViz
+    ros2 run rviz2 rviz2
+```
+
+- Configure RViz to view the data of visualization_msgs/msg/Marker messages:
+    1. `Display`: Modify `Fixed Frame` from `map` to the frame used in maker message `my_frame`
+    2. `Display`: Add a `Marker` display, to the node `visualization_marker`
+- Now in the `3D View` we see a different shape form changing each 1 second
