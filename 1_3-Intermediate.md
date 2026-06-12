@@ -3275,3 +3275,39 @@ This tutorial shows how:
     1. `Display`: Modify `Fixed Frame` from `map` to the frame used in maker message `my_frame`
     2. `Display`: Add a `Marker` display, to the node `visualization_marker`
 - Now in the `3D View` we see a different shape form changing each 1 second
+
+### Marker: Point and Lines - C++ (45')
+- Use `visualization_msgs/msg/Marker` messages to send points and lines to RViz
+- Introduce some marker types: `POINTS`, `LINE_STRIP`, `LINE_LIST`
+
+#### Using Points, Line Strips, and Line Lists
+- `POINTS`, `LINE_STRIP`, `LINE_LIST` markers are member of `visualization_msgs/msg/Marker` message
+- `POINTS`: Places a point at each point added
+- `LINE`: Use each point as a vertex in a connected set of lines
+- `LINE_LIST`: Creates unconnected lines out of each pair of points
+
+**Source** path: `/learnRobotic/ros2_ws/src/visualization_marker_tutorials/visualization_tutorials/points_and_lines.cpp`
+
+**Viewing the markers**
+- Build and Run package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Build package 'visualization_marker_tutorials'
+    colcon build --packages-select visualization_marker_tutorials
+    # Run the node
+    ros2 run visualization_marker_tutorials points_and_lines
+```
+
+- Start RViz. New terminal
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Start RViz
+    ros2 run rviz2 rviz2
+```
+
+- Configure RViz to view the data of visualization_msgs/msg/Marker messages:
+    1. `Display`: Modify `Fixed Frame` from `map` to the frame used in maker message `my_frame`
+    2. `Display`: Add a `Marker` display, to the node `visualization_marker`
+- Now in the `3D View` we see a rotating helix that includes `POINTS`, `LINE_STRIP` and `LINE_LIST`
