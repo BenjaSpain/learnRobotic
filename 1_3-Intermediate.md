@@ -3311,3 +3311,162 @@ This tutorial shows how:
     1. `Display`: Modify `Fixed Frame` from `map` to the frame used in maker message `my_frame`
     2. `Display`: Add a `Marker` display, to the node `visualization_marker`
 - Now in the `3D View` we see a rotating helix that includes `POINTS`, `LINE_STRIP` and `LINE_LIST`
+
+### Marker: Display Types (1h)
+- `Markers` display allows addition of various primitive shapes to the 3D view
+
+#### Marker Message
+1. **Example Usage (C++)**
+- First create a publisher node that publishes `Marker` messages from `visualization_messages` package to `visualization_marker` topic
+```cpp
+    auto marker_pub = node->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 1);
+```
+- After, fill out a `visualization_msgs/msg/Marker` message and publishing it:
+```cpp
+    visualization_msgs::msg::Marker marker;
+
+    marker.header.frame_id = "/my_frame";
+    marker.header.stamp = rclcpp::Clock().now();
+
+    marker.ns = "basic_shapes";
+    marker.id = 0;
+
+    marker.type = visualization_msgs::msg::Marker::SPHERE;
+
+    marker.action = visualization_msgs::msg::Marker::ADD;
+
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+
+    marker.scale.x = 1.0;
+    marker.scale.y = 1.0;
+    marker.scale.z = 1.0;
+
+    marker.color.r = 0.0f;
+    marker.color.g = 1.0f;
+    marker.color.b = 0.0f;
+    marker.color.a = 1.0;   // Don't forget to set the alpha!
+
+    // only if using a MESH_RESOURCE marker type:
+    marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
+
+    marker.lifetime = rclcpp::Duration::from_nanoseconds(0);
+
+    marker_pub->publish(marker);
+```
+
+2. **Message Parameters**
+`Marker message` type is defined in `ROS 2 Common Interfaces` package
+
+- `ns`: *Namespace* for these markers. This plus the *id* form a unique identifier
+
+- `id`: *Unique id* assigned to this marker
+
+- `type`: Type of marker (Arrow, Sphere, …)
+
+- `action`: `0` = add/modify, `1` = (deprecated), `2` = delete, `3` = deleteall
+
+- `pose`: Pose marker, specified as x/y/z position and x/y/z/w quaternion orientation
+
+- `scale`: Scale of the marker. Applied before the position/orientation. A scale of [1, 1, 1] means the object will be 1m by 1m by 1m
+
+- `color`: Color of the object, specified as `r/g/b/a`, with values in the range of *[0, 1]*. `a` or alpha value, denotes the opacity of the marker with *1* indicating *opaque* and *0* indicating *completely transparent*. Set `a` value to a *non-zero* value or it will be transparent by default
+
+- `points`: Only used for markers of type `Points`, `Line strips`, and `Line` / `Cube` / `Sphere` -lists. Also used for *Arrow* type, if you want to specify the arrow start and end points. Represents a list of `geometry_msgs/Point` types for the center or each marker object
+
+- `colors`: Only used for markers that use the points member. Specifies per-vertex color r/g/b/ color (no alpha yet) for each entry in `points`
+
+- `lifetime`: *Duration message value*, automatically delete the marker after this period of time. Countdown resets if another marker of the same `namespace` / `id` is received
+
+- `frame_locked`: Without `frame_locked` parameter the marker will be placed based on the current transform and will stay there even if the given transform changes later. This parameter tells `RViz` to retransform marker to the new current location of the specified frame on every update cycle
+
+- `text`: Text string,  used for `TEXT_VIEW_FACING` marker type
+
+- `mesh_resource`: Resource location for the `MESH_RESOURCE` marker type. Any mesh type supported by *RViz* (`.stl` or Ogre `.mesh` in 1.0, with the addition of COLLADA in 1.1). Format is the URI-form used by *resource_retriever*, including the package:// syntax
+
+3. **Object types**
+- *Arrow (ARROW=0)*
+    Can be defined in 2 ways:
+    - `Position/Orientation`: 
+        - Pivot point is around tip of its tail
+        - Identity orientation is along +X axis
+        - `scale.x`: arrow length
+        - `scale.y`: arrow width
+        - `scale.z`: arrow height
+    - `Start/End points`
+        - Specify *start/end* point for the arrow
+        - If put points into `point` member, it is assumed this way
+            - Index 0: *start point*
+            - Index 1: *end point*
+        - `scale.x`: Shaft diameter
+        - `scale.y`: Head diameter
+        - `scale.z`: If not Zero, it specifies head length
+
+- *Cube (CUBE=1)*
+    - Pivot point at center of the cube
+
+- *Sphere (SPHERE=2)*
+    - Pivot point at center of sphere
+    - Setting values different get an ellipsoid instead of sphere
+        - `scale.x`: Diameter in x direction
+        - `scale.y`: Diameter in y direction
+        - `scale.z`: Diameter in z direction
+
+- *Cylinder (CYLINDER=3)*
+    - Pivot point at center of cylinder
+    - Setting to different values get ellipse instead of circle:
+        - `scale.x`: Diameter in x direction
+        - `scale.y`: Diameter in y direction
+    - `scale.z`: Height
+
+- *Line Strip (LINE_STRIP=4)*
+    - Use `point` member of `visualization_msgs\msg\Marker` message
+    - Draw a line between every 2 consecutives points
+    - `scale.x`: Width of the line
+
+- *Line List (LINE_LIST=5)*
+    - Use `point` member of `visualization_msgs\msg\Marker` message
+    - Draw a line between each pair of points
+    - `scale.x`: width of the segements
+
+- *Cube List (CUBE_LIST=6)*
+    - List of cubes with same properties except position
+    - `Points` member of `visualization_msgs/msg/Marker` message used for position of each cube
+    - Improves batch-up rendering in comparation of using `visualization_msgs/msg/MarkerArray`
+
+- *Sphere List (SPHERE_LIST=7)*
+    - List of spheres with all the same properties except their positions
+    - `Points` member of `visualization_msgs/msg/Marker` message used for position of each sphere
+    - Improves batch-up rendering in comparation of using `visualization_msgs/msg/MarkerArray`
+
+- *Points (POINTS=8)*
+    - `Points` member of `visualization_msgs/msg/Marker` message used for position of each point
+    - `scale.x`: width of the point
+    - `scale.y`: height of the point
+
+- *View-Oriented Text (TEXT_VIEW_FACING=9)*
+    - Display text in 3D
+    - `scale.z`: Height of an uppercase "A"
+
+- *Mesh Resource (MESH_RESOURCE=10)*
+    - Uses `mesh_resource` field in the marker
+    - Can be any mesh type supported by `RViz`
+    - Format is `URI-form` used by resource_retriever, including `package://` syntax
+    - If `mesh_use_embedded_materials` flag set to -> Mesh support embedded materials
+    - Material defined in that file will be used
+
+- *Triangle List (TRIANGLE_LIST=11)*
+    - Use `point` and optionally `colors`
+    - Every set of 3 points is treated as a *triangle*
+    - 
+
+#### Rendering Complesity Notes
+- Single marker is *less expensive to render* than many markers
+- Example: 
+    - *Single cube list* is able to handle thousands of *cubes*
+    - We will not be able to render thousands of individual *cube* markers
