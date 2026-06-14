@@ -1,4 +1,4 @@
-# Intermediate (WiP)
+# Intermediate (42h25')
 [Intermediate](https://docs.ros.org/en/jazzy/Tutorials/Intermediate.html)
 
 ## Managing Dependencies with rosdep (30')
@@ -3104,8 +3104,7 @@ cd urdf_tutorial_cpp
 - [View SDF Models in RViz](https://github.com/Yadunund/view_sdf_rviz)
 - [Jupyterlab URDF Viewer](https://github.com/IsabelParedes/jupyterlab-urdf)
 
-
-## RViz (wip)
+## RViz (7h)
 ### RViz User Guide (2h)
 ```bash
     # Init environment
@@ -3470,3 +3469,100 @@ This tutorial shows how:
 - Example: 
     - *Single cube list* is able to handle thousands of *cubes*
     - We will not be able to render thousands of individual *cube* markers
+
+### Building a Custom RViz Display (45')
+- If there is a message type that does not have plugin to display it, there are 2 choices:
+    1. Convert message to another type, as `visualization_msgs/Marker`
+    2. Write a Custom RViz Display
+
+- 2nd option takes a bit of work, but can lead to much richer visualizations
+- Obtain source for this tutorial
+```bash
+    # Move to local pathInit environment
+    cd ~/learnRobotic/ros2_ws/src
+    git clone https://github.com/MetroRobots/rviz_plugin_tutorial
+```
+
+#### Point2D Message
+- Defined message interface `Point2D.msg` in path `~/learnRobotic/ros2_ws/src/rviz_plugin_tutorial-main/rviz_plugin_tutorial_msgs/msg/Point2D.msg`
+```cpp
+    std_msgs/Header header
+    float64 x
+    float64 y
+```
+
+#### Boilerplate for Basic Plugin
+- Header File: `/home/benjamincanton/learnRobotic/ros2_ws/src/rviz_plugin_tutorial/rviz_plugin_tutorial/include/rviz_plugin_tutorial/point_display.hpp`
+    - Implement `MessageFilterFisplay` class, can be used with any message with a `std_msgs/Header`
+    - Templated with `Point2D` message type
+    - `processMesagge`, only method that need to be implemented
+
+- Source File: `/home/benjamincanton/learnRobotic/ros2_ws/src/rviz_plugin_tutorial/rviz_plugin_tutorial/src/point_display.cpp`
+    - For RViz to find out the plugin, need `PLUGINLIB` invocation
+
+- `package.xml`: `~/learnRobotic/ros2_ws/src/rviz_plugin_tutorial/rviz_plugin_tutorial/package.xml`
+    - Added 3 dependencies
+    ```xml
+        <depend>pluginlib</depend>
+        <depend>rviz_common</depend>
+        <depend>rviz_plugin_tutorial_msgs</depend>
+    ```
+
+- `rviz_common_plugins.xml`: `~/learnRobotic/ros2_ws/src/rviz_plugin_tutorial/rviz_plugin_tutorial/rviz_common_plugins.xml`
+    - This is standard `pluginlib` code:
+        - Library `path` is the name of the library we'll assign in CMake
+        - Class should match `PLUGINLIB` invocation
+
+- `CMakeLists.txt`
+    - To generate proper Qt files, need:
+        - `CMAKE_AUTOMOC`: Turn on
+        - Wrap header calling `qt5_wrap_cpp` with each header that has `Q_OBJECT` in it
+        - Include `MOC_FILES` in library alongside our other cpp files
+
+#### Testing it out
+- Build and Run package
+```bash
+    # Init environment
+    cd ~/learnRobotic/ && source ros2_env_conf.sh && cd ros2_ws && source install/setup.bash
+    # Build package 'visualization_marker_tutorials'
+    colcon build --packages-select rviz_plugin_tutorial
+```
+--- IT GIVES ERROR ON BUILD - Skip rest of section
+
+### Building a Custom RViz Panel (30')
+- Work within RViz environment to display or interact with some data in a two-dimensional environment
+    - Create new QT panel within RViz
+    - Create topic subscriber within RViz to monitor messages published and display them within RViz
+    - Create topic publisher. When presses button within RViz publish to an output ROS topic
+```bash
+    # Move to local pathInit environment
+    cd ~/learnRobotic/ros2_ws/src
+    git clone https://github.com/MetroRobots/rviz_panel_tutorial
+```
+
+#### Boilerplate Code
+- Header: `~/learnRobotic/ros2_ws/src/rviz_panel_tutorial/include/rviz_panel_tutorial/demo_panel.hpp`
+    - Extend `rviz_common::Panel` class
+    - Need `Q_OBJECT` macro in there to get `QT` parts of the GUI to work.
+
+- Source: `~/learnRobotic/ros2_ws/src/rviz_panel_tutorial/src/demo_panel.cpp`
+    - For `RViz` to find our plugin, we need this `PLUGINLIB` invocation in our code
+
+- `package.xml`: `~/learnRobotic/ros2_ws/src/rviz_panel_tutorial/package.xml`
+    - Need following dependencies
+    ```xml
+        <depend>pluginlib</depend>
+        <depend>rviz_common</depend>
+    ```
+- `rviz_common_plugins.xml`: `~/learnRobotic/ros2_ws/src/rviz_panel_tutorial/rviz_common_plugins.xml`
+    - This is standard `pluginlib` code:
+        - Library `path` is the name of the library we'll assign in CMake
+        - Class should match `PLUGINLIB` invocation
+
+- `CMakeLists.txt`
+    - To generate proper Qt files, need:
+        - `CMAKE_AUTOMOC`: Turn on
+        - Wrap header calling `qt5_wrap_cpp` with each header that has `Q_OBJECT` in it
+        - Include `MOC_FILES` in library alongside our other cpp files
+
+-- SKIP REST OF CHAPTER
