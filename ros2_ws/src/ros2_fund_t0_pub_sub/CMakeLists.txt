@@ -10,7 +10,7 @@ find_package(ament_cmake REQUIRED)
 
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-
+find_package(ros2_fund_t2_custom_msg REQUIRED)                  # ADDED for Task2: custom message type Hello.msg
 
 add_executable(publisher src/publisher.cpp)
 ament_target_dependencies(publisher rclcpp std_msgs)
@@ -18,9 +18,18 @@ ament_target_dependencies(publisher rclcpp std_msgs)
 add_executable(subscriber src/subscriber.cpp)
 ament_target_dependencies(subscriber rclcpp std_msgs)
 
+add_executable(pub_cust_msg src/publisher_cust_msg.cpp)         # ADDED for Task2: custom message type Hello.msg
+ament_target_dependencies(pub_cust_msg rclcpp ros2_fund_t2_custom_msg) # ADDED for Task2: custom message type Hello.msg
+
+add_executable(sub_cust_msg src/subscriber_cust_msg.cpp)        # ADDED for Task2: custom message type Hello.msg
+ament_target_dependencies(sub_cust_msg rclcpp ros2_fund_t2_custom_msg) # ADDED for Task2: custom message type Hello.msg
+
+
 install(TARGETS
   publisher
   subscriber
+  pub_cust_msg                                                  # ADDED for Task2: custom message type Hello.msg
+  sub_cust_msg                                                  # ADDED for Task2: custom message type Hello.msg
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
