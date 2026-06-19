@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Pair 1 -->
+  <group>
+    <push-ros-namespace namespace="pair1" />
+
+    <node pkg="ros2_fund_t3_multi_instances" exec="pub3_cust_msg" name="pub1" output="screen">
+      <param name="topic_name" value="my_hello" />
+      <param name="message_text" value="Message from /pair1/pub1" />
+    </node>
+
+    <node pkg="ros2_fund_t3_multi_instances" exec="sub3_cust_msg" name="sub1" output="screen">
+      <param name="topic_name" value="my_hello" />
+    </node>
+  </group>
+
+  <!-- Pair 2 -->
+  <group>
+    <push-ros-namespace namespace="pair2" />
+
+    <node pkg="ros2_fund_t3_multi_instances" exec="pub3_cust_msg" name="pub2" output="screen">
+      <param name="topic_name" value="my_hello" />
+      <param name="message_text" value="Message from /pair2/pub2" />
+    </node>
+
+    <node pkg="ros2_fund_t3_multi_instances" exec="sub3_cust_msg" name="sub2" output="screen">
+      <param name="topic_name" value="my_hello" />
+    </node>
+  </group>
+</launch>
