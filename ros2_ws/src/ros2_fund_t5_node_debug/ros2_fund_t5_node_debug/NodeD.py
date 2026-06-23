@@ -5,23 +5,24 @@ from std_msgs.msg import Float64MultiArray
 
 class ArrayTrimmer(Node):
     def __init__(self):
-        super().__init__('NodeA')
-        self.declare_parameter('x', 5)
+        super().__init__('NodeD')
+        self.declare_parameter('x', 5) # Value in case the parameter is not set in the launch file
+        """
         self.subscription = self.create_subscription(
             Float64MultiArray,
-            'SA',
+            '/SA',
             self.listener_callback,
             10)
-        self.publisher_ = self.create_publisher(Float64MultiArray, 'AB', 10)
-
-    def listener_callback(self, msg):
-        x = self.get_parameter('x').get_parameter_value().integer_value
-        
-        new_msg = Float64MultiArray()
-        new_msg.data = msg.data[:-x]
-        
-        self.publisher_.publish(new_msg)
-
+        self.publisher_ = self.create_publisher(Float64MultiArray, '/n/BC', 10)
+    
+        def listener_callback(self, msg):
+            x = self.get_parameter('x').get_parameter_value().integer_value
+            
+            new_msg = Float64MultiArray()
+            new_msg.data = msg.data[:x] * 2
+            
+            self.publisher_.publish(new_msg)
+        """
 
 def main(args=None):
     rclpy.init(args=args)

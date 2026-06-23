@@ -12,12 +12,16 @@ class ArraySumNode(Node):
             'BC',
             self.listener_callback,
             10)
-        self.publisher_ = self.create_publisher(Float64, '/C', 10)
+        self.publisher_ = self.create_publisher(Float64, 'C', 10)
 
     def listener_callback(self, msg):
         array_np = np.array(msg.data)
         total_sum = float(np.sum(array_np))
         
+        self.get_logger().info(
+            f'Received list: {list(msg.data)} | Sum: {total_sum}'
+        )
+
         output_msg = Float64()
         output_msg.data = total_sum
         self.publisher_.publish(output_msg)

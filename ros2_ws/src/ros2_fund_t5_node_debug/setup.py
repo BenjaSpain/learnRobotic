@@ -3,7 +3,8 @@ import os
 from setuptools import find_packages, setup
 from glob import glob
 
-package_name = 'node_debug_task'
+#package_name = 'node_debug_task'
+package_name = 'ros2_fund_t5_node_debug'
 
 setup(
     name=package_name,
@@ -18,10 +19,10 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='root',
-    maintainer_email='haris.sikic@htecgroup.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    maintainer='benjamincanton',
+    maintainer_email='benjamin.canton@htecgroup.com',
+    description='ROS2 Fundamentals - Task 5: Node Debugging. C++',
+    license='Apache-2.0',
     extras_require={
         'test': [
             'pytest',
@@ -29,11 +30,11 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'node_a = node_debug_task.NodeA:main',
-            'node_b = node_debug_task.NodeB:main',
-            'node_c = node_debug_task.NodeC:main',
-            'node_d = node_debug_task.NodeD:main',
-            'node_s = node_debug_task.NodeS:main',
+            'node_a = ros2_fund_t5_node_debug.NodeA:main',
+            'node_b = ros2_fund_t5_node_debug.NodeB:main',
+            'node_c = ros2_fund_t5_node_debug.NodeC:main',
+            'node_d = ros2_fund_t5_node_debug.NodeD:main',
+            'node_s = ros2_fund_t5_node_debug.NodeS:main',
         ],
     },
 )

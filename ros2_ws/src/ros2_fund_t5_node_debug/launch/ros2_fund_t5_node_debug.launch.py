@@ -7,50 +7,47 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     config_s = os.path.join(
-        get_package_share_directory('node_debug_task'),
+        get_package_share_directory('ros2_fund_t5_node_debug'),
         'config',
         'params_s.yaml'
     )
 
     config_a = os.path.join(
-        get_package_share_directory('node_debug_task'),
+        get_package_share_directory('ros2_fund_t5_node_debug'),
         'config',
         'params_a.yaml'
     )
 
     config_b = os.path.join(
-        get_package_share_directory('node_debug_task'),
+        get_package_share_directory('ros2_fund_t5_node_debug'),
         'config',
-        'params_a.yaml'
+        'params_b.yaml'
     )
 
     config_d = os.path.join(
-        get_package_share_directory('node_debug_task'),
+        get_package_share_directory('ros2_fund_t5_node_debug'),
         'config',
         'params_d.yaml'
     )
 
     return LaunchDescription([
         Node(
-            package='node_debug_task',
-            executable='node_s',
+            package='ros2_fund_t5_node_debug',
+            executable='node_s',      
             name='NodeS',
             parameters=[config_s],
             output='screen'
         ),
         Node(
-            package='node_debug_task',
+            package='ros2_fund_t5_node_debug',
             executable='node_a',
             namespace='N',
             name='NodeA',
             parameters=[config_a],
-            remappings=[
-                ('/SA', 'SA')
-            ],
             output='screen'
         ),
         Node(
-            package='node_debug_task',
+            package='ros2_fund_t5_node_debug',
             executable='node_b',
             namespace='N',
             name='NodeB',
@@ -58,16 +55,16 @@ def generate_launch_description():
             output='screen'
         ),
         Node(
-            package='node_debug_task',
+            package='ros2_fund_t5_node_debug',
             executable='node_c',
-            namespace='n',
+            namespace='N',
             name='NodeC',
             output='screen'
         ),
         Node(
-            package='node_debug_task',
+            package='ros2_fund_t5_node_debug',
             executable='node_d',
-            namespace='N',
+            namespace='n',
             name='NodeD',
             parameters=[config_d],
             output='screen'
